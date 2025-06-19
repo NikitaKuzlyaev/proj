@@ -1,0 +1,21 @@
+{% extends "header.html" %}
+{% block title %}Регистрация{% endblock %}
+{% block content %}
+<h2>Регистрация</h2>
+<form method="post" action="/auth/register" autocomplete="off">
+    <input style="display:none" type="text" name="fakeusernameremembered" autocomplete="username">
+    <input style="display:none" type="password" name="fakepasswordremembered" autocomplete="new-password">
+
+    <div class="mb-3">
+        <label for="username" class="form-label">Логин</label>
+        <input type="text" class="form-control" name="username" autocomplete="off" required>
+    </div>
+    <div class="mb-3">
+        <label for="password" class="form-label">Пароль</label>
+        <input type="password" class="form-control" name="password" autocomplete="new-password" required>
+    </div>
+    <button type="submit" class="btn btn-success">Зарегистрироваться</button>
+</form>
+
+
+{% endblock %}

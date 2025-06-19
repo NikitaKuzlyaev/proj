@@ -1,0 +1,9 @@
+from core.api.v1.routers.auth import router as auth_router
+from core.api.v1.routers.organization import router as organization_router
+from core.api.v1.routers.employee import router as employee_router
+from core.api.v1.routers.folder import router as folder_router
+from core.api.v1.routers.project import router as project_router
+from core.api.v1.routers.offer import router as offer_router
+
+routers = [auth_router, organization_router, employee_router, folder_router, project_router, offer_router, ]
+
