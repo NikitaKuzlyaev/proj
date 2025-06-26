@@ -70,5 +70,20 @@ class PermissionCRUDRepository(BaseCRUDRepository):
         await self.async_session.refresh(instance=new_permission)
         return new_permission
 
+    async def can_user_create_projects_inside_organization(
+            self,
+            user_id: int,
+            org_id: int
+    ) -> bool:
+        stmt = select(Permission).where(
+            Permission.user_id == user_id,
+            Permission.resource_id == org_id,
+            Permission.resource_type == ResourceType.ORGANIZATION.value,
+            Permission.permission_type == PermissionType.CREATE_PROJECTS_INSIDE_ORGANIZATION.value,
+        )
+        result = await self.async_session.execute(stmt)
+        return bool(result.scalar_one_or_none())
+
+
 
 permission_repo = get_repository(repo_type=PermissionCRUDRepository)
