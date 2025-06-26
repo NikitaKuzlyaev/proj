@@ -1,8 +1,11 @@
+from typing import List
+
 import fastapi
 from fastapi import APIRouter, Depends, Request, Form, HTTPException, Response, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi import Query, HTTPException
+from starlette.responses import JSONResponse
 
 from core.dependencies.authorization import get_user, oauth2_scheme
 from core.dependencies.repository import get_repository
@@ -16,7 +19,7 @@ from core.utilities.exceptions.http.exc_400 import (
     http_exc_400_credentials_bad_signup_request,
 )
 
-router = fastapi.APIRouter(prefix="/auth", tags=["authentication"])
+router = fastapi.APIRouter(prefix="/permissions", tags=["permissions"])
 
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -25,32 +28,37 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.schemas.user import UserCreate, UserOut, Token
 from core.services.domain import auth as auth_service
 from fastapi import Security
+from core.schemas.permission import PermissionsResponse
 
-@router.post("/register", response_model=UserOut)
-async def register(
-        data: UserCreate,
-        user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
+ALL_FIELDS = PermissionsResponse.model_fields.keys()
+
+@router.get("/", response_model=PermissionsResponse)
+async def permissions(
+        user: User = Depends(get_user),
+        fields: List[str] = Query(default=[]),
 ):
-    user: User = await auth_service.register_user(data=data, user_repo=user_repo)
+    # Если ничего не передали — вернуть всё
+    selected_fields = set(fields) if fields else set(ALL_FIELDS)
 
-    return user
+    result = {}
+    print(fields)
 
+    if "can_create_global_organizations" in selected_fields:
+        result["can_create_global_organizations"] = True
 
-@router.post("/login", response_model=Token)
-async def login(
-        form_data: OAuth2PasswordRequestForm = Depends(),
-        user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
-):
-    token = await auth_service.authenticate_user(username=form_data.username,
-                                                 password=form_data.password,
-                                                 user_repo=user_repo
-                                                 )
-
-    return {"access_token": token, "token_type": "bearer"}
+    return result
 
 
-@router.post("/get-my-token")
-async def get_my_token(
-        token: str = Security(oauth2_scheme),
-):
-    return token
+# @router.get("/p", response_model=PermissionsResponse)
+# async def check_permission(
+#         user: User = Depends(get_user),
+#         resourse_type: str = Query(),
+#         resourse_id: ind = Query(),
+#
+#
+# ) -> JSONResponse:
+#
+#     flag = False
+#
+#     return JSONResponse({"body": flag})
+

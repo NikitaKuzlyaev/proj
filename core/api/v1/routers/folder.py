@@ -4,8 +4,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi import Query, HTTPException
 from core.dependencies.repository import get_repository
-from core.schemas.account import AccountInCreate, AccountInLogin, AccountInResponse, AccountWithToken
-from core.repository.crud.account import AccountCRUDRepository
+#from core.schemas.user import UserInCreate, UserInLogin, UserInResponse, UserWithToken
+from core.repository.crud.user import UserCRUDRepository
 from core.services.securities.auth import jwt_generator
 from core.utilities.exceptions.database import EntityAlreadyExists
 from core.utilities.exceptions.http.exc_400 import (

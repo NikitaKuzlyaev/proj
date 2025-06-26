@@ -1,10 +1,10 @@
+from typing import List, Sequence
+
 import fastapi
 from fastapi import APIRouter, Depends, Request, Form, HTTPException, Response, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi import Query, HTTPException
-
-from core.dependencies.authorization import get_user, oauth2_scheme
 from core.dependencies.repository import get_repository
 from core.models import User
 
@@ -16,7 +16,7 @@ from core.utilities.exceptions.http.exc_400 import (
     http_exc_400_credentials_bad_signup_request,
 )
 
-router = fastapi.APIRouter(prefix="/auth", tags=["authentication"])
+router = fastapi.APIRouter(prefix="/debug", tags=["debug"])
 
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -24,33 +24,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.schemas.user import UserCreate, UserOut, Token
 from core.services.domain import auth as auth_service
-from fastapi import Security
 
-@router.post("/register", response_model=UserOut)
+
+@router.post("/get-all-users")
 async def register(
-        data: UserCreate,
         user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
 ):
-    user: User = await auth_service.register_user(data=data, user_repo=user_repo)
+    users = await auth_service.get_all_users(user_repo=user_repo)
 
-    return user
-
-
-@router.post("/login", response_model=Token)
-async def login(
-        form_data: OAuth2PasswordRequestForm = Depends(),
-        user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
-):
-    token = await auth_service.authenticate_user(username=form_data.username,
-                                                 password=form_data.password,
-                                                 user_repo=user_repo
-                                                 )
-
-    return {"access_token": token, "token_type": "bearer"}
-
-
-@router.post("/get-my-token")
-async def get_my_token(
-        token: str = Security(oauth2_scheme),
-):
-    return token
+    return [
+        {
+            "id": user.id,
+            "username": user.username,
+        }
+        for user in users
+    ]

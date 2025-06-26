@@ -4,7 +4,7 @@ import pydantic
 from jose import jwt as jose_jwt, JWTError as JoseJWTError
 
 from core.config.manager import settings
-from core.models.account import Account
+from core.models.user import User
 from core.schemas.jwt import JWTAccount, JWToken
 from core.utilities.exceptions.database import EntityDoesNotExist
 from core.utilities.exceptions.auth import UndecodedToken, InvalidToken, TokenException
@@ -40,7 +40,7 @@ class JWTGenerator:
 
     def generate_access_token(
             self,
-            account: Account
+            account: User
     ) -> str:
         """
         """
