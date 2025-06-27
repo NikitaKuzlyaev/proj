@@ -28,7 +28,10 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
             org_id: int,
             name: str,
             short_description: str,
-            long_description: str
+            long_description: str,
+            visibility: str,
+            activity_status: str,
+            join_policy: str,
     ) -> Organization | None:
         stmt = (
             update(Organization)
@@ -36,7 +39,10 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
             .values(
                 name=name,
                 short_description=short_description,
-                long_description=long_description
+                long_description=long_description,
+                visibility=visibility,
+                activity_status=activity_status,
+                join_policy=join_policy,
             )
             .execution_options(synchronize_session="fetch")
         )
@@ -79,7 +85,7 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
                                         short_description=org_create.short_description,
                                         long_description=org_create.long_description,
                                         creator_id=org_create.creator_id,
-                                        root_folder_id=org_create.root_folder_id)
+                                        )
 
         self.async_session.add(instance=new_organization)
         await self.async_session.commit()

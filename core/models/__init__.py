@@ -4,3 +4,4 @@ from .project import Project
 from .user import User
 from .organizationMember import OrganizationMember
 from .permissions import Permission
+from .vacancy import Vacancy

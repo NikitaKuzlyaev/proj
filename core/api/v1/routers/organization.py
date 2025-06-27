@@ -10,17 +10,20 @@ from starlette.responses import JSONResponse
 
 from core.dependencies.authorization import get_user, oauth2_scheme
 from core.dependencies.repository import get_repository
-from core.models import User, Organization
+from core.models import User, Organization, Project
 from core.models.organizationMember import OrganizationMember
-#from core.repository.crud.folder import FolderCRUDRepository
+# from core.repository.crud.folder import FolderCRUDRepository
 from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
 from core.repository.crud.permission import PermissionCRUDRepository
 from core.schemas.organization import OrganizationCreateInRequest, OrganizationResponse, SequenceOrganizationResponse, \
     OrganizationDetailInfoResponse, OrganizationInPatch, SequenceAllOrganizationsShortInfoResponse, \
-    OrganizationShortInfoResponse, OrganizationInDelete
+    OrganizationShortInfoResponse, OrganizationInDelete, OrganizationInfoForEditResponse, OrganizationVisibilityType, \
+    OrganizationJoinPolicyType, OrganizationActivityStatusType, OrganizationProjectsShortInfoResponse
 # from core.schemas.user import UserInCreate, UserInLogin, UserInResponse, UserWithToken
 from core.repository.crud.user import UserCRUDRepository
+from core.schemas.project import ProjectsInOrganizationRequest, ProjectManagerInfo
+from core.services.domain.project import ProjectService, get_project_service
 from core.services.securities.auth import jwt_generator
 from core.utilities.exceptions.database import EntityAlreadyExists
 from core.utilities.exceptions.http.exc_400 import (
@@ -103,8 +106,42 @@ async def get_organization_info_by_id(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.get("/info-for-edit", response_model=OrganizationInfoForEditResponse)
+async def get_organization_info_for_edit_by_id(
+        request: Request,
+        response: Response,
+        org_id: int,
+        user: User = Depends(get_user),
+        organization_service: OrganizationService = Depends(get_organization_service),
+        permission_service: PermissionService = Depends(get_permission_service),
+) -> JSONResponse:
+    try:
+        org: Organization = await organization_service.get_organization_by_id(
+            org_id=org_id,
+        )
+        # check permissions
+        allow_user_edit: bool = \
+            await permission_service.can_user_edit_organization(
+                user_id=user.id,
+                org_id=org.id,
+            )
 
-@router.get("/detail", response_class=JSONResponse)
+        org_response = OrganizationInfoForEditResponse(
+            id=org.id,
+            name=org.name,
+            short_description=org.short_description,
+            long_description=org.long_description,
+            visibility=OrganizationVisibilityType(org.visibility),
+            activity_status=OrganizationActivityStatusType(org.activity_status),
+            join_policy=OrganizationJoinPolicyType(org.join_policy),
+        )
+        content = org_response.model_dump()
+        return JSONResponse(content=content)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/detail", response_model=OrganizationDetailInfoResponse)
 async def get_organization_detail_info_by_id(
         request: Request,
         response: Response,
@@ -112,7 +149,7 @@ async def get_organization_detail_info_by_id(
         user: User = Depends(get_user),
         organization_service: OrganizationService = Depends(get_organization_service),
         permission_service: PermissionService = Depends(get_permission_service),
-):
+) -> JSONResponse:
     try:
         org: Organization = \
             await organization_service.get_organization_by_id(
@@ -182,12 +219,12 @@ async def patch_organization(
         organization_service: OrganizationService = Depends(get_organization_service),
         permission_service: PermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
+    # check permissions
     flag: bool = \
         await permission_service.can_user_edit_organization(
             user_id=user.id,
             org_id=org_patch_form.id,
         )
-
     if not flag:
         raise HTTPException(status_code=400, detail="Not allowed")
 
@@ -197,12 +234,63 @@ async def patch_organization(
             name=org_patch_form.name,
             short_description=org_patch_form.short_description,
             long_description=org_patch_form.long_description,
+            visibility=org_patch_form.visibility,
+            activity_status=org_patch_form.activity_status,
+            join_policy=org_patch_form.join_policy,
         )
-
     if not org:
         raise HTTPException(status_code=404)
 
     return JSONResponse({"message": "its ok"})
+
+
+@router.get("/projects-short-info", response_model=Sequence[OrganizationProjectsShortInfoResponse])
+async def get_organization_projects_short_info(
+        request: Request,
+        response: Response,
+        #projects_in_org_schema: ProjectsInOrganizationRequest,
+        org_id: int = Query(),
+        user: User = Depends(get_user),
+        organization_service: OrganizationService = Depends(get_organization_service),
+        project_service: ProjectService = Depends(get_project_service),
+        permission_service: PermissionService = Depends(get_permission_service),
+) -> JSONResponse:
+    try:
+
+        org: Organization = \
+            await organization_service.get_organization_by_id(
+                org_id=org_id
+            )
+        if not org:
+            raise HTTPException(status_code=404)
+
+        projects: Sequence[Project] = \
+            await project_service.get_all_projects_in_organization_by_org_id(
+                org_id=org.id
+            )
+
+        res = [
+            OrganizationProjectsShortInfoResponse(
+                id=project.id,
+                name=project.name,
+                short_description=project.short_description,
+                manager=ProjectManagerInfo(
+                    user_id=user.id,
+                    name=user.username,
+                    avatar=''
+                ),
+                team_current_size=0,
+                team_full_size=0,
+                open_vacancies=0
+            ).model_dump() for project in projects
+        ]
+
+        return JSONResponse({'body': res})
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 
 #
 # @router.delete("/", response_class=HTMLResponse)
@@ -243,13 +331,3 @@ async def patch_organization(
 """
     ----------------------------------------------------------
 """
-
-# @router.get("/", response_class=HTMLResponse)
-# async def get_linked_folders(request: Request, response: Response):
-#     """
-#     Возвращает список id папок внутри организации
-#     :param request:
-#     :param response:
-#     :return:
-#     """
-#     ...

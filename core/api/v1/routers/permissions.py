@@ -5,13 +5,17 @@ from fastapi import APIRouter, Depends, Request, Form, HTTPException, Response, 
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi import Query, HTTPException
+from typing import Sequence
 from starlette.responses import JSONResponse
 
 from core.dependencies.authorization import get_user, oauth2_scheme
 from core.dependencies.repository import get_repository
-from core.models import User
+from core.models import User, Organization, Project
 
 from core.repository.crud.user import UserCRUDRepository
+from core.services.domain.organization import OrganizationService, get_organization_service
+from core.services.domain.permission import PermissionService, get_permission_service
+from core.services.domain.project import get_project_service, ProjectService
 from core.services.securities.auth import jwt_generator
 from core.utilities.exceptions.database import EntityAlreadyExists
 from core.utilities.exceptions.http.exc_400 import (
@@ -47,6 +51,67 @@ async def permissions(
         result["can_create_global_organizations"] = True
 
     return result
+
+
+@router.get("/is-user-allowed-to-create-projects-inside-organization", response_model=bool)
+async def can_user_create_projects_inside_organization(
+        request: Request,
+        response: Response,
+        org_id: int = Query(),
+        user: User = Depends(get_user),
+        organization_service: OrganizationService = Depends(get_organization_service),
+        project_service: ProjectService = Depends(get_project_service),
+        permission_service: PermissionService = Depends(get_permission_service),
+) -> JSONResponse:
+    try:
+
+        org: Organization = \
+            await organization_service.get_organization_by_id(
+                org_id=org_id
+            )
+        if not org:
+            return JSONResponse({'body': False})
+
+        flag: bool = \
+            await permission_service.can_user_create_projects_inside_organization(
+                org_id=org_id,
+                user_id=user.id
+            )
+
+        return JSONResponse({'body': flag})
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/is-user-allowed-to-edit-project", response_model=bool)
+async def can_user_edit_project(
+        request: Request,
+        response: Response,
+        project_id: int = Query(),
+        user: User = Depends(get_user),
+        organization_service: OrganizationService = Depends(get_organization_service),
+        project_service: ProjectService = Depends(get_project_service),
+        permission_service: PermissionService = Depends(get_permission_service),
+) -> JSONResponse:
+    try:
+
+        project: Project = \
+            await project_service.get_project_by_id(
+                project_id=project_id
+            )
+        if not project:
+            return JSONResponse({'body': False})
+
+        flag: bool = \
+            await permission_service.can_user_edit_project(
+                project_id=project_id,
+                user_id=user.id
+            )
+
+        return JSONResponse({'body': flag})
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # @router.get("/p", response_model=PermissionsResponse)

@@ -6,6 +6,7 @@ import pydantic
 from pydantic import field_validator, Field
 
 from core.schemas.base import BaseSchemaModel
+from core.schemas.project import ProjectManagerInfo
 
 
 class OrganizationInCreate(BaseSchemaModel):
@@ -19,14 +20,45 @@ class OrganizationInUpdate(BaseSchemaModel):
     ...
 
 
+class OrganizationJoinPolicyType(str, Enum):
+    OPEN = "OPEN"
+    INVITE = "INVITE"
+    CLOSED = "CLOSED"
+    CODE = "CODE"
+
+
+class OrganizationVisibilityType(str, Enum):
+    OPEN = "OPEN"
+    CLOSED = "CLOSED"
+
+
+class OrganizationActivityStatusType(str, Enum):
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+
+
 class OrganizationInDelete(BaseSchemaModel):
     id: int
+
 
 class OrganizationInPatch(BaseSchemaModel):
     id: int
     name: str
     short_description: Optional[str] = None
     long_description: Optional[str] = None
+    visibility: OrganizationVisibilityType
+    activity_status: OrganizationActivityStatusType
+    join_policy: OrganizationJoinPolicyType
+
+
+class OrganizationProjectsShortInfoResponse(BaseSchemaModel):
+    id: int
+    name: str
+    short_description: Optional[str] = None
+    manager: ProjectManagerInfo
+    open_vacancies: Optional[int] = Field(default=0)
+    team_current_size: Optional[int] = Field(default=0)
+    team_full_size: Optional[int] = Field(default=0)
 
 
 class OrganizationCreateInRequest(BaseSchemaModel):
@@ -43,19 +75,13 @@ class OrganizationResponse(BaseSchemaModel):
     creator_id: int
 
 
-class OrganizationJoinPolicy(str, Enum):
-    OPEN = "OPEN"
-    INVITE_ONLY = "INVITE"
-    CLOSED = "CLOSED"
-
-
 class OrganizationShortInfoResponse(BaseSchemaModel):
     id: int
     name: str
     short_description: Optional[str] = None
     creator_id: int
     is_user_member: bool
-    join_policy: OrganizationJoinPolicy
+    join_policy: OrganizationJoinPolicyType
 
 
 class SequenceOrganizationResponse(BaseSchemaModel):
@@ -64,6 +90,26 @@ class SequenceOrganizationResponse(BaseSchemaModel):
 
 class SequenceAllOrganizationsShortInfoResponse(BaseSchemaModel):
     body: Sequence[OrganizationShortInfoResponse]
+
+
+class OrganizationInfoForEditResponse(BaseSchemaModel):
+    id: int
+    name: str
+    short_description: Optional[str] = None
+    long_description: Optional[str] = None
+    visibility: OrganizationVisibilityType
+    activity_status: OrganizationActivityStatusType
+    join_policy: OrganizationJoinPolicyType
+
+
+class OrganizationForEditRequest(BaseSchemaModel):
+    id: int
+    name: str
+    short_description: Optional[str] = None
+    long_description: Optional[str] = None
+    visibility: OrganizationVisibilityType
+    activity_status: OrganizationActivityStatusType
+    join_policy: OrganizationJoinPolicyType
 
 
 class OrganizationDetailInfoResponse(BaseSchemaModel):

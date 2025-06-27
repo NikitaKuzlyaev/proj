@@ -8,7 +8,7 @@ from typing import Sequence
 from core.dependencies.repository import get_repository
 from core.models import Organization
 from core.models.organizationMember import OrganizationMember
-#from core.repository.crud.folder import FolderCRUDRepository
+# from core.repository.crud.folder import FolderCRUDRepository
 # from core.schemas.user import UserInCreate, UserInLogin, UserInResponse, UserWithToken
 from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
@@ -21,10 +21,9 @@ from core.utilities.exceptions.http.exc_400 import (
 )
 from core.models.user import User
 from core.schemas.organization import OrganizationInCreate, OrganizationCreateInRequest
-#from core.schemas.folder import RootFolderInCreate
-#from core.models.folder import Folder
+# from core.schemas.folder import RootFolderInCreate
+# from core.models.folder import Folder
 from core.dependencies.authorization import get_user
-
 
 
 class PermissionService:
@@ -40,11 +39,41 @@ class PermissionService:
 
     async def can_user_edit_organization(
             self,
-            user_id: int,
             org_id: int,
+            user_id: int,
     ) -> bool:
-        flag: bool = await self.permission_repo.can_user_edit_organization(user_id=user_id, org_id=org_id)
+        flag: bool = \
+            await self.permission_repo.can_user_edit_organization(
+                user_id=user_id,
+                org_id=org_id
+            )
         return flag
+
+    async def can_user_edit_project(
+            self,
+            project_id: int,
+            user_id: int,
+    ) -> bool:
+        flag: bool = \
+            await self.permission_repo.can_user_edit_project(
+                user_id=user_id,
+                project_id=project_id
+            )
+        return flag
+
+
+    async def can_user_create_projects_inside_organization(
+            self,
+            org_id: int,
+            user_id: int,
+    ) -> bool:
+        flag: bool = \
+            await self.permission_repo.can_user_create_projects_inside_organization(
+                user_id=user_id,
+                org_id=org_id
+            )
+        return flag
+
 
 
 def get_permission_service(
@@ -57,4 +86,3 @@ def get_permission_service(
         member_repo=member_repo,
         permission_repo=permission_repo
     )
-

@@ -24,7 +24,7 @@ from core.utilities.exceptions.http.exc_400 import (
 )
 from core.models.user import User
 from core.schemas.organization import OrganizationInCreate, OrganizationCreateInRequest, OrganizationShortInfoResponse, \
-    OrganizationJoinPolicy
+    OrganizationJoinPolicyType, OrganizationVisibilityType, OrganizationActivityStatusType
 #from core.models.folder import Folder
 from core.dependencies.authorization import get_user
 
@@ -71,7 +71,7 @@ class OrganizationService:
                         short_description=org.short_description,
                         creator_id=org.creator_id,
                         is_user_member=(org.id in user_orgs_id_set),
-                        join_policy=OrganizationJoinPolicy(org.join_policy),
+                        join_policy=OrganizationJoinPolicyType(org.join_policy),
                     ) for org in all_orgs
                 ]
 
@@ -96,15 +96,6 @@ class OrganizationService:
             user: User,
     ) -> Organization:
         try:
-            root_folder_create_schema = (
-                RootFolderInCreate(
-                    name='root',
-                    creator_id=user.id
-                )
-            )
-            new_root_folder = \
-                await self.folder_repo.create_root_folder(root_folder_create_schema)
-
             new_org = \
                 await self.org_repo.create_organization(
                     org_create=OrganizationInCreate(
@@ -112,7 +103,6 @@ class OrganizationService:
                         short_description=org_create_in_request_schema.short_description,
                         long_description=org_create_in_request_schema.long_description,
                         creator_id=user.id,
-                        root_folder_id=new_root_folder.id
                     )
                 )
             new_member = \
@@ -139,14 +129,6 @@ class OrganizationService:
         try:
             if org.creator_id != user.id:
                 return False
-
-            # folder: Folder | None = \
-            #     await self.org_repo.get_first_not_root_inner_folder_or_none(
-            #         org_id=org.id
-            #     )
-            #
-            # if folder is None:
-            #     return False
 
             res: None = \
                 await self.org_repo.delete_organization(
@@ -176,6 +158,9 @@ class OrganizationService:
             name: str,
             short_description: str,
             long_description: str,
+            visibility: OrganizationVisibilityType,
+            activity_status: OrganizationActivityStatusType,
+            join_policy: OrganizationJoinPolicyType,
     ) -> Organization:
         try:
             org: Organization = \
@@ -183,7 +168,10 @@ class OrganizationService:
                     org_id=org_id,
                     name=name,
                     short_description=short_description,
-                    long_description=long_description
+                    long_description=long_description,
+                    visibility=visibility.value,
+                    activity_status=activity_status.value,
+                    join_policy=join_policy.value,
                 )
             return org
         except Exception as e:

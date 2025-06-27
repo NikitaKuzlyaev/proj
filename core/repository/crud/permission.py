@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.sql import functions as sqlalchemy_functions
 
 from core.dependencies.repository import get_repository
+from core.models import Project
 from core.models.organizationMember import OrganizationMember
 
 # from core.schemas.user import UserInCreate, UserInLogin, UserInUpdate
@@ -84,6 +85,18 @@ class PermissionCRUDRepository(BaseCRUDRepository):
         result = await self.async_session.execute(stmt)
         return bool(result.scalar_one_or_none())
 
+
+    async def can_user_edit_project(
+            self,
+            user_id: int,
+            project_id: int
+    ) -> bool:
+        stmt = select(Project).where(
+            Project.id == project_id,
+        )
+        res = await self.async_session.execute(stmt)
+        project: Project = res.scalar_one_or_none()
+        return project.creator_id == user_id
 
 
 permission_repo = get_repository(repo_type=PermissionCRUDRepository)
