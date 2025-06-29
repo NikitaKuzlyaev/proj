@@ -1,50 +1,33 @@
-import typing
 from typing import Sequence, Tuple
 
-import sqlalchemy
 from sqlalchemy import select, update, Row, and_
-from sqlalchemy.engine import row
-from sqlalchemy.sql import functions as sqlalchemy_functions
+from sqlalchemy.orm import aliased
 
 from core.dependencies.repository import get_repository
 from core.models import Project
-from core.models.organizationMember import OrganizationMember
-
-# from core.schemas.user import UserInCreate, UserInLogin, UserInUpdate
-from core.models.user import User
-
-from core.schemas.organization_member import OrganizationMemberInCreate
-from core.models.organization import Organization
 from core.models.permissions import Permission, PermissionType, ResourceType
-
-from core.repository.crud.base import BaseCRUDRepository
-from core.schemas.vacancy import VacancyActivityStatusType, VacancyVisibilityType
-from core.services.securities.hashing import pwd_generator
-from core.utilities.exceptions.database import EntityAlreadyExists, EntityDoesNotExist
-from core.utilities.exceptions.auth import PasswordDoesNotMatch
-from core.services.securities.credential import account_credential_verifier
+from core.models.user import User
 from core.models.vacancy import Vacancy
-from core.schemas.project import ProjectVisibilityType, ProjectVisibilityType, ProjectManagerInfo, ProjectOfVacancyInfo, \
-    ProjectVacanciesShortInfoResponse, ProjectActivityStatusType
-from sqlalchemy.orm import aliased
+from core.repository.crud.base import BaseCRUDRepository
+from core.schemas.project import ProjectManagerInfo, ProjectOfVacancyInfo, ProjectVacanciesShortInfoResponse
+from core.schemas.vacancy import VacancyActivityStatusType, VacancyVisibilityType
 
 Manager = aliased(User)
 
 
 class VacancyCRUDRepository(BaseCRUDRepository):
 
-    # async def get_all_projects(
-    #         self,
-    # ) -> Sequence[Project]:
-    #     result = await self.async_session.execute(select(Project))
-    #     projects = result.scalars().all()
-    #     return projects
-
     async def get_all_vacancies_in_project(
             self,
             project_id: int,
     ) -> Sequence[Vacancy]:
-        stmt = select(Vacancy).where(Vacancy.project_id == project_id)
+        stmt = (
+            select(
+                Vacancy
+            ).where(
+                Vacancy.project_id == project_id,
+            )
+        )
         result = await self.async_session.execute(stmt)
         vacancies = result.scalars().all()
         return vacancies
@@ -61,8 +44,13 @@ class VacancyCRUDRepository(BaseCRUDRepository):
                 Manager,
                 Permission.id.label("permission_id_for_edit_vacancy"),
             )
-            .join(Project, Project.id == Vacancy.project_id)
-            .join(Manager, Manager.id == Vacancy.creator_id)
+            .join(
+                Project,
+                Project.id == Vacancy.project_id,
+            )
+            .join(Manager,
+                  Manager.id == Vacancy.creator_id,
+                  )
             .outerjoin(
                 Permission,
                 and_(
@@ -72,7 +60,9 @@ class VacancyCRUDRepository(BaseCRUDRepository):
                     Permission.permission_type == PermissionType.EDIT_VACANCY.value,
                 )
             )
-            .where(Project.id == project_id)
+            .where(
+                Project.id == project_id,
+            )
         )
 
         rows = await self.async_session.execute(stmt)

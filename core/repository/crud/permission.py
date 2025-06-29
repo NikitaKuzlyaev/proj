@@ -1,26 +1,9 @@
-import typing
-from typing import Sequence
-
-import sqlalchemy
 from sqlalchemy import select
-from sqlalchemy.sql import functions as sqlalchemy_functions
 
 from core.dependencies.repository import get_repository
 from core.models import Project
-from core.models.organizationMember import OrganizationMember
-
-# from core.schemas.user import UserInCreate, UserInLogin, UserInUpdate
-from core.models.user import User
-
-from core.schemas.organization_member import OrganizationMemberInCreate
-from core.models.organization import Organization
 from core.models.permissions import Permission, PermissionType, ResourceType
-
 from core.repository.crud.base import BaseCRUDRepository
-from core.services.securities.hashing import pwd_generator
-from core.utilities.exceptions.database import EntityAlreadyExists, EntityDoesNotExist
-from core.utilities.exceptions.auth import PasswordDoesNotMatch
-from core.services.securities.credential import account_credential_verifier
 
 
 class PermissionCRUDRepository(BaseCRUDRepository):
@@ -105,7 +88,7 @@ class PermissionCRUDRepository(BaseCRUDRepository):
             user_id: int,
             org_id: int
     ) -> Permission:
-        permission: Permission  = (
+        permission: Permission = (
             await self.create_permission(
                 user_id=user_id,
                 resource_type=ResourceType.ORGANIZATION.value,
@@ -120,7 +103,9 @@ class PermissionCRUDRepository(BaseCRUDRepository):
             user_id: int,
             org_id: int
     ) -> bool:
-        stmt = select(Permission).where(
+        stmt = select(
+            Permission
+        ).where(
             Permission.user_id == user_id,
             Permission.resource_id == org_id,
             Permission.resource_type == ResourceType.ORGANIZATION.value,
@@ -134,7 +119,9 @@ class PermissionCRUDRepository(BaseCRUDRepository):
             user_id: int,
             project_id: int
     ) -> bool:
-        stmt = select(Project).where(
+        stmt = select(
+            Project
+        ).where(
             Project.id == project_id,
         )
         res = await self.async_session.execute(stmt)

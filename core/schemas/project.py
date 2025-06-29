@@ -1,16 +1,10 @@
-import datetime
 from enum import Enum
 from typing import Optional
 
-import pydantic
 from pydantic import Field
 
 from core.schemas.base import BaseSchemaModel
 from core.schemas.vacancy import VacancyActivityStatusType, VacancyVisibilityType
-
-
-class ProjectInCreate(BaseSchemaModel):
-    ...
 
 
 class ProjectVisibilityType(str, Enum):
@@ -87,10 +81,6 @@ class CreatedProjectResponse(BaseSchemaModel):
 
 class PatchedProjectResponse(BaseSchemaModel):
     project_id: int
-
-
-class ProjectInUpdate(BaseSchemaModel):
-    ...
 
 
 class ProjectsInOrganizationRequest(BaseSchemaModel):

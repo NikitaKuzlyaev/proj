@@ -1,37 +1,19 @@
-import fastapi
-from fastapi import APIRouter, Depends, Request, Form, HTTPException, Response, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import RedirectResponse, HTMLResponse
-from fastapi import Query, HTTPException
 from typing import Sequence
 
-from starlette.responses import JSONResponse
+from fastapi import Depends
+from fastapi import HTTPException
 
 from core.dependencies.repository import get_repository
 from core.models import Organization, Project
-from core.models.organizationMember import OrganizationMember
-# from core.repository.crud.folder import FolderCRUDRepository
-# from core.schemas.user import UserInCreate, UserInLogin, UserInResponse, UserWithToken
+from core.models.user import User
 from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
 from core.repository.crud.permission import PermissionCRUDRepository
 from core.repository.crud.project import ProjectCRUDRepository
 from core.repository.crud.user import UserCRUDRepository
-from core.schemas.project import ProjectCreateRequest, ProjectPatchRequest, ProjectFullInfoResponse, \
-    CreatedProjectResponse, PatchedProjectResponse
+from core.schemas.project import ProjectFullInfoResponse, CreatedProjectResponse, PatchedProjectResponse
 from core.services.mappers.project import ProjectMapper, get_project_mapper
-from core.services.mappers.vacancy import VacancyMapper, get_vacancy_mapper
-from core.services.securities.auth import jwt_generator
-from core.utilities.exceptions.database import EntityAlreadyExists, EntityDoesNotExist
-from core.utilities.exceptions.http.exc_400 import (
-    http_exc_400_credentials_bad_signin_request,
-    http_exc_400_credentials_bad_signup_request,
-)
-from core.models.user import User
-from core.schemas.organization import OrganizationInCreate, OrganizationCreateInRequest
-# from core.schemas.folder import RootFolderInCreate
-# from core.models.folder import Folder
-from core.dependencies.authorization import get_user
+from core.utilities.exceptions.database import EntityDoesNotExist
 
 
 class ProjectService:
@@ -55,20 +37,22 @@ class ProjectService:
             self,
             org_id: int,
     ) -> Sequence[Project]:
-        res: Sequence[Project] = \
+        res: Sequence[Project] = (
             await self.project_repo.get_all_projects_in_organization_by_org_id(
-                org_id=org_id
+                org_id=org_id,
             )
+        )
         return res
 
     async def get_project_by_id(
             self,
             project_id: int,
     ) -> Project:
-        res: Project = \
+        res: Project = (
             await self.project_repo.get_project_by_id(
-                project_id=project_id
+                project_id=project_id,
             )
+        )
         return res
 
     async def get_project_full_info_response(
@@ -100,7 +84,6 @@ class ProjectService:
                     manager=user,
                 )
             )
-
             return res
 
         except Exception as e:
@@ -117,14 +100,15 @@ class ProjectService:
             visibility: str,
     ) -> CreatedProjectResponse:
 
-        org: Organization = \
+        org: Organization = (
             await self.org_repo.get_organization_by_id(
-                org_id=org_id
+                org_id=org_id,
             )
+        )
         if not org:
             raise HTTPException(status_code=404)
 
-        project: Project = \
+        project: Project = (
             await self.project_repo.create_project(
                 user_id=user_id,
                 name=name,
@@ -134,7 +118,7 @@ class ProjectService:
                 activity_status=activity_status,
                 visibility=visibility,
             )
-
+        )
         res: CreatedProjectResponse = (
             self.project_mapper.get_created_project_response(
                 project=project,
@@ -165,7 +149,6 @@ class ProjectService:
                 activity_status=activity_status,
             )
         )
-
         res: PatchedProjectResponse = (
             self.project_mapper.get_patched_project_response(
                 project=project,
@@ -178,10 +161,11 @@ class ProjectService:
             self,
             project_id: int,
     ) -> User | None:
-        user: User = \
+        user: User = (
             await self.project_repo.get_project_creator(
-                project_id=project_id
+                project_id=project_id,
             )
+        )
         return user
 
 

@@ -8,4 +8,4 @@ from core.api.v1.routers.permissions import router as permissions
 from core.api.v1.routers.vacancy import router as vacancy_router
 
 routers = [debug_router, auth_router, organization_router, employee_router, project_router,
-           offer_router, vacancy_router, permissions,]
+           offer_router, vacancy_router, permissions, ]

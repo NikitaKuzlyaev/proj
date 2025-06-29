@@ -1,38 +1,29 @@
 import fastapi
-from fastapi import APIRouter, Depends, Request, Form, HTTPException, Response, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import RedirectResponse, HTMLResponse
-from fastapi import Query, HTTPException
+from fastapi import Depends
+from fastapi import Security
+from fastapi.security import OAuth2PasswordRequestForm
 
-from core.dependencies.authorization import get_user, oauth2_scheme
+from core.dependencies.authorization import oauth2_scheme
 from core.dependencies.repository import get_repository
 from core.models import User
-
 from core.repository.crud.user import UserCRUDRepository
-from core.services.securities.auth import jwt_generator
-from core.utilities.exceptions.database import EntityAlreadyExists
-from core.utilities.exceptions.http.exc_400 import (
-    http_exc_400_credentials_bad_signin_request,
-    http_exc_400_credentials_bad_signup_request,
-)
+from core.schemas.user import UserCreate, UserOut, Token
+from core.services.domain import auth as auth_service
 
 router = fastapi.APIRouter(prefix="/auth", tags=["authentication"])
 
-from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from core.schemas.user import UserCreate, UserOut, Token
-from core.services.domain import auth as auth_service
-from fastapi import Security
 
 @router.post("/register", response_model=UserOut)
 async def register(
         data: UserCreate,
         user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
 ):
-    user: User = await auth_service.register_user(data=data, user_repo=user_repo)
-
+    user: User = (
+        await auth_service.register_user(
+            data=data,
+            user_repo=user_repo,
+        )
+    )
     return user
 
 
@@ -41,11 +32,13 @@ async def login(
         form_data: OAuth2PasswordRequestForm = Depends(),
         user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
 ):
-    token = await auth_service.authenticate_user(username=form_data.username,
-                                                 password=form_data.password,
-                                                 user_repo=user_repo
-                                                 )
-
+    token: str = (
+        await auth_service.authenticate_user(
+            username=form_data.username,
+            password=form_data.password,
+            user_repo=user_repo,
+        )
+    )
     return {"access_token": token, "token_type": "bearer"}
 
 

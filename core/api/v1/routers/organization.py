@@ -2,7 +2,7 @@ from typing import Sequence
 
 import fastapi
 from fastapi import Body
-from fastapi import Depends, Request, Response
+from fastapi import Depends
 from fastapi import Query, HTTPException
 from starlette.responses import JSONResponse
 
@@ -21,18 +21,16 @@ from core.services.domain.project import ProjectService, get_project_service
 router = fastapi.APIRouter(prefix="/org", tags=["organization"])
 
 
-
-
 @router.get("/", response_class=JSONResponse)
 async def get_all_organizations(
         organization_service: OrganizationService = Depends(get_organization_service),
 ) -> JSONResponse:
     try:
-        orgs: Sequence[Organization] = await organization_service.get_all_organizations()
-
+        orgs: Sequence[Organization] = (
+            await organization_service.get_all_organizations()
+        )
         org_response = SequenceOrganizationResponse.model_validate({"body": orgs})
         content = org_response.model_dump()
-
         return JSONResponse(content=content)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -64,9 +62,10 @@ async def get_organization_info_by_id(
         organization_service: OrganizationService = Depends(get_organization_service),
 ) -> JSONResponse:
     try:
-
-        org: Organization = await organization_service.get_organization_by_id(
-            org_id=org_id,
+        org: Organization = (
+            await organization_service.get_organization_by_id(
+                org_id=org_id,
+            )
         )
         org_response = OrganizationResponse(
             id=org.id,
@@ -80,6 +79,7 @@ async def get_organization_info_by_id(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @router.get("/info-for-edit", response_model=OrganizationInfoForEditResponse)
 async def get_organization_info_for_edit_by_id(
         org_id: int,
@@ -88,15 +88,17 @@ async def get_organization_info_for_edit_by_id(
         permission_service: PermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     try:
-        org: Organization = await organization_service.get_organization_by_id(
-            org_id=org_id,
+        org: Organization = (
+            await organization_service.get_organization_by_id(
+                org_id=org_id,
+            )
         )
-        allow_user_edit: bool = \
+        allow_user_edit: bool = (
             await permission_service.can_user_edit_organization(
                 user_id=user.id,
                 org_id=org.id,
             )
-
+        )
         org_response = OrganizationInfoForEditResponse(
             id=org.id,
             name=org.name,
@@ -120,27 +122,29 @@ async def get_organization_detail_info_by_id(
         permission_service: PermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     try:
-        org: Organization = \
+        org: Organization = (
             await organization_service.get_organization_by_id(
-                org_id=org_id
+                org_id=org_id,
             )
-
+        )
         if not org:
             raise HTTPException(status_code=404)
 
-        org_members: Sequence[OrganizationMember] = \
+        org_members: Sequence[OrganizationMember] = (
             await organization_service.get_organization_members_by_org_id(
-                org_id=org_id
+                org_id=org_id,
             )
+        )
 
         number_of_members = len(org_members)
 
         # check permissions
-        allow_user_edit: bool = \
+        allow_user_edit: bool = (
             await permission_service.can_user_edit_organization(
                 user_id=user.id,
                 org_id=org.id,
             )
+        )
 
         org_response = OrganizationDetailInfoResponse(
             id=org.id,
@@ -167,9 +171,11 @@ async def create_organization(
         organization_service: OrganizationService = Depends(get_organization_service),
 ) -> JSONResponse:
     try:
-        org = await organization_service.create_organization(
-            org_create_in_request_schema=org_create_in_request_schema,
-            user=user,
+        org: Organization = (
+            await organization_service.create_organization(
+                org_create_in_request_schema=org_create_in_request_schema,
+                user=user,
+            )
         )
         org_response = OrganizationResponse.model_validate(org)
         return JSONResponse(content=org_response.model_dump())
@@ -184,11 +190,12 @@ async def patch_organization(
         organization_service: OrganizationService = Depends(get_organization_service),
         permission_service: PermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
-    flag: bool = \
+    flag: bool = (
         await permission_service.can_user_edit_organization(
             user_id=user.id,
             org_id=org_patch_form.id,
         )
+    )
     if not flag:
         raise HTTPException(status_code=400, detail="Not allowed")
 
@@ -217,7 +224,6 @@ async def get_organization_projects_short_info(
         permission_service: PermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     try:
-
         org: Organization = \
             await organization_service.get_organization_by_id(
                 org_id=org_id
@@ -250,4 +256,3 @@ async def get_organization_projects_short_info(
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-

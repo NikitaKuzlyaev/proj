@@ -1,32 +1,17 @@
-import fastapi
-from fastapi import APIRouter, Depends, Request, Form, HTTPException, Response, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import RedirectResponse, HTMLResponse
-from fastapi import Query, HTTPException
 from typing import Sequence
 
-from sqlalchemy import delete
+from fastapi import Depends
 
 from core.dependencies.repository import get_repository
 from core.models import Organization
 from core.models.organizationMember import OrganizationMember
-#from core.repository.crud.folder import FolderCRUDRepository
-# from core.schemas.user import UserInCreate, UserInLogin, UserInResponse, UserWithToken
+from core.models.user import User
 from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
 from core.repository.crud.permission import PermissionCRUDRepository
-from core.schemas.organization_member import OrganizationMemberInCreate
-from core.services.securities.auth import jwt_generator
-from core.utilities.exceptions.database import EntityAlreadyExists
-from core.utilities.exceptions.http.exc_400 import (
-    http_exc_400_credentials_bad_signin_request,
-    http_exc_400_credentials_bad_signup_request,
-)
-from core.models.user import User
 from core.schemas.organization import OrganizationInCreate, OrganizationCreateInRequest, OrganizationShortInfoResponse, \
     OrganizationJoinPolicyType, OrganizationVisibilityType, OrganizationActivityStatusType
-#from core.models.folder import Folder
-from core.dependencies.authorization import get_user
+from core.schemas.organization_member import OrganizationMemberInCreate
 
 
 class OrganizationService:
@@ -44,7 +29,9 @@ class OrganizationService:
             self
     ) -> Sequence[Organization]:
         try:
-            orgs: Sequence[Organization] = await self.org_repo.get_all_organizations()
+            orgs: Sequence[Organization] = (
+                await self.org_repo.get_all_organizations()
+            )
             return orgs
         except Exception as e:
             raise e
@@ -54,16 +41,19 @@ class OrganizationService:
             user: User,
     ) -> Sequence[OrganizationShortInfoResponse]:
         try:
-            all_orgs: Sequence[Organization] = \
+            all_orgs: Sequence[Organization] = (
                 await self.org_repo.get_all_organizations()
-            user_orgs: Sequence[OrganizationMember] = \
+            )
+
+            user_orgs: Sequence[OrganizationMember] = (
                 await self.member_repo.get_all_user_organization_memberships(
-                    user_id=user.id
+                    user_id=user.id,
                 )
+            )
 
             user_orgs_id_set = set([member.organization_id for member in user_orgs])
 
-            result = \
+            result = (
                 [
                     OrganizationShortInfoResponse(
                         id=org.id,
@@ -74,6 +64,7 @@ class OrganizationService:
                         join_policy=OrganizationJoinPolicyType(org.join_policy),
                     ) for org in all_orgs
                 ]
+            )
 
             return result
 
@@ -85,7 +76,11 @@ class OrganizationService:
             org_id: int,
     ) -> Organization:
         try:
-            org: Organization = await self.org_repo.get_organization_by_id(org_id)
+            org: Organization = (
+                await self.org_repo.get_organization_by_id(
+                    org_id=org_id,
+                )
+            )
             return org
         except Exception as e:
             raise e
@@ -96,7 +91,7 @@ class OrganizationService:
             user: User,
     ) -> Organization:
         try:
-            new_org = \
+            new_org = (
                 await self.org_repo.create_organization(
                     org_create=OrganizationInCreate(
                         name=org_create_in_request_schema.name,
@@ -105,6 +100,7 @@ class OrganizationService:
                         creator_id=user.id,
                     )
                 )
+            )
             new_member = \
                 await self.member_repo.create_organization_member(
                     org_create=OrganizationMemberInCreate(

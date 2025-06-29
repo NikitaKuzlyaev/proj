@@ -1,9 +1,4 @@
-import datetime
 from enum import Enum
-from typing import Optional
-
-import pydantic
-from pydantic import Field
 
 from core.schemas.base import BaseSchemaModel
 
@@ -20,7 +15,6 @@ class VacancyActivityStatusType(str, Enum):
 
 class VacancyCreateRequest(BaseSchemaModel):
     project_id: int
-    # user_id: int
     name: str
     short_description: str
     activity_status: VacancyActivityStatusType
@@ -29,6 +23,7 @@ class VacancyCreateRequest(BaseSchemaModel):
 
 class VacancyCreateResponse(BaseSchemaModel):
     vacancy_id: int
+
 
 class VacancyPatchResponse(BaseSchemaModel):
     vacancy_id: int

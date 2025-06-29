@@ -1,7 +1,3 @@
-import datetime
-
-import pydantic
-
 from core.schemas.base import BaseSchemaModel
 
 

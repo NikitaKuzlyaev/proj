@@ -1,26 +1,11 @@
-import typing
 from typing import Sequence
 
-import sqlalchemy
 from sqlalchemy import select, update
-from sqlalchemy.sql import functions as sqlalchemy_functions
 
 from core.dependencies.repository import get_repository
 from core.models import Project
-from core.models.organizationMember import OrganizationMember
-
-# from core.schemas.user import UserInCreate, UserInLogin, UserInUpdate
 from core.models.user import User
-
-from core.schemas.organization_member import OrganizationMemberInCreate
-from core.models.organization import Organization
-from core.models.permissions import Permission, PermissionType, ResourceType
-
 from core.repository.crud.base import BaseCRUDRepository
-from core.services.securities.hashing import pwd_generator
-from core.utilities.exceptions.database import EntityAlreadyExists, EntityDoesNotExist
-from core.utilities.exceptions.auth import PasswordDoesNotMatch
-from core.services.securities.credential import account_credential_verifier
 
 
 class ProjectCRUDRepository(BaseCRUDRepository):
@@ -36,7 +21,7 @@ class ProjectCRUDRepository(BaseCRUDRepository):
             self,
             org_id: int,
     ) -> Sequence[Project]:
-        stmt = select(Project).where(Project.organization_id==org_id)
+        stmt = select(Project).where(Project.organization_id == org_id)
         result = await self.async_session.execute(stmt)
         projects = result.scalars().all()
         return projects
@@ -45,20 +30,18 @@ class ProjectCRUDRepository(BaseCRUDRepository):
             self,
             project_id: int,
     ) -> Project:
-        stmt = select(Project).where(Project.id==project_id)
+        stmt = select(Project).where(Project.id == project_id)
         result = await self.async_session.execute(stmt)
         project = result.scalars().one_or_none()
         return project
-
 
     async def get_project_creator(
             self,
             project_id: int,
     ) -> User | None:
-
         project: Project = await self.get_project_by_id(project_id=project_id)
 
-        stmt = select(User).where(User.id==project.creator_id)
+        stmt = select(User).where(User.id == project.creator_id)
         result = await self.async_session.execute(stmt)
         user = result.scalars().one_or_none()
         return user
@@ -74,8 +57,12 @@ class ProjectCRUDRepository(BaseCRUDRepository):
             activity_status: str
     ) -> Project | None:
         stmt = (
-            update(Project)
-            .where(Project.id == project_id)
+            update(
+                Project
+            )
+            .where(
+                Project.id == project_id
+            )
             .values(
                 organization_id=org_id,
                 name=name,
@@ -84,7 +71,9 @@ class ProjectCRUDRepository(BaseCRUDRepository):
                 visibility=visibility,
                 activity_status=activity_status
             )
-            .execution_options(synchronize_session="fetch")
+            .execution_options(
+                synchronize_session="fetch"
+            )
         )
 
         await self.async_session.execute(stmt)
@@ -94,7 +83,6 @@ class ProjectCRUDRepository(BaseCRUDRepository):
             select(Project).where(Project.id == project_id)
         )
         return result.scalar_one_or_none()
-
 
     async def create_project(
             self,
@@ -106,8 +94,7 @@ class ProjectCRUDRepository(BaseCRUDRepository):
             activity_status: str,
             visibility: str,
     ) -> Project:
-
-        new_project = Project(
+        new_project: Project = Project(
             name=name,
             creator_id=user_id,
             organization_id=org_id,
@@ -122,5 +109,6 @@ class ProjectCRUDRepository(BaseCRUDRepository):
         await self.async_session.refresh(instance=new_project)
 
         return new_project
+
 
 project_repo = get_repository(repo_type=ProjectCRUDRepository)

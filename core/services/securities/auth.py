@@ -3,13 +3,11 @@ import datetime
 import pydantic
 from jose import jwt as jose_jwt, JWTError as JoseJWTError
 
-from core.config.manager import settings
 from core.models.user import User
 from core.schemas.jwt import JWTAccount, JWToken
-from core.utilities.exceptions.database import EntityDoesNotExist
 from core.utilities.exceptions.auth import UndecodedToken, InvalidToken, TokenException
+from core.utilities.exceptions.database import EntityDoesNotExist
 
-# ПОКА ЗАХАРДКОДИЛ, ПОТОМ ПОМЕНЯЮ. наверно...
 JWT_SECRET_KEY = "super-dupper-secret-key"
 JWT_ALGORITHM = "HS256"
 JWT_ACCESS_TOKEN_EXPIRATION_TIME = 1  # в минутах

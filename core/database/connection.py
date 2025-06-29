@@ -1,7 +1,5 @@
-import os
 from typing import Any, AsyncGenerator
 
-from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -18,6 +16,7 @@ async_session = sessionmaker(
 )
 
 Base = declarative_base()
+
 
 async def get_session() -> AsyncGenerator[Any, Any]:
     async with async_session() as session:

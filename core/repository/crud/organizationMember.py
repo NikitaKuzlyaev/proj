@@ -1,24 +1,11 @@
-import typing
 from typing import Sequence
 
-import sqlalchemy
 from sqlalchemy import select
-from sqlalchemy.sql import functions as sqlalchemy_functions
 
 from core.dependencies.repository import get_repository
 from core.models.organizationMember import OrganizationMember
-
-# from core.schemas.user import UserInCreate, UserInLogin, UserInUpdate
-from core.models.user import User
-
-from core.schemas.organization_member import OrganizationMemberInCreate
-from core.models.organization import Organization
-
 from core.repository.crud.base import BaseCRUDRepository
-from core.services.securities.hashing import pwd_generator
-from core.utilities.exceptions.database import EntityAlreadyExists, EntityDoesNotExist
-from core.utilities.exceptions.auth import PasswordDoesNotMatch
-from core.services.securities.credential import account_credential_verifier
+from core.schemas.organization_member import OrganizationMemberInCreate
 
 
 class OrganizationMemberCRUDRepository(BaseCRUDRepository):
@@ -43,14 +30,15 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
             self,
             org_create: OrganizationMemberInCreate
     ) -> OrganizationMember:
-        new_org_member = OrganizationMember(user_id=org_create.user_id,
-                                            organization_id=org_create.organization_id,
-                                            )
-
+        new_org_member: OrganizationMember = (
+            OrganizationMember(
+                user_id=org_create.user_id,
+                organization_id=org_create.organization_id,
+            )
+        )
         self.async_session.add(instance=new_org_member)
         await self.async_session.commit()
         await self.async_session.refresh(instance=new_org_member)
-
         return new_org_member
 
     async def get_all_user_organization_memberships(

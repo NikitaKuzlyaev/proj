@@ -2,7 +2,6 @@ import datetime
 from enum import Enum
 from typing import Sequence, Optional
 
-import pydantic
 from pydantic import field_validator, Field
 
 from core.schemas.base import BaseSchemaModel
@@ -120,15 +119,9 @@ class OrganizationDetailInfoResponse(BaseSchemaModel):
     long_description: Optional[str] = None
     created_at: str
     creator_id: int
-    # Вычисляемые
     number_of_members: int
     allow_user_edit: bool = Field(default=True)
     allow_user_delete: Optional[bool] = Field(default=False)
-
-    # number_of_all_projects: int
-    # number_of_active_projects: int
-    # number_of_active_vacancies: int
-    # number_of_active_threads: int
 
     @field_validator("created_at", mode="before")
     @classmethod

@@ -91,8 +91,3 @@ async def patch_project(
         return JSONResponse({"body": patched_project_schema})
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.delete("/", response_class=HTMLResponse)
-async def delete_project():
-    ...

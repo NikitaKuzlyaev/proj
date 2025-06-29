@@ -1,8 +1,3 @@
-import datetime
-from typing import Sequence, Optional
-
-import pydantic
-
 from core.schemas.base import BaseSchemaModel
 
 
