@@ -41,7 +41,7 @@ class ProjectCRUDRepository(BaseCRUDRepository):
         projects = result.scalars().all()
         return projects
 
-    async def get_projects_by_id(
+    async def get_project_by_id(
             self,
             project_id: int,
     ) -> Project:
@@ -56,7 +56,7 @@ class ProjectCRUDRepository(BaseCRUDRepository):
             project_id: int,
     ) -> User | None:
 
-        project: Project = await self.get_projects_by_id(project_id=project_id)
+        project: Project = await self.get_project_by_id(project_id=project_id)
 
         stmt = select(User).where(User.id==project.creator_id)
         result = await self.async_session.execute(stmt)

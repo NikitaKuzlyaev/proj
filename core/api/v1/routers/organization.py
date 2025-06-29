@@ -2,51 +2,29 @@ from typing import Sequence
 
 import fastapi
 from fastapi import Body
-from fastapi import APIRouter, Depends, Request, Form, HTTPException, Response, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi import Depends, Request, Response
 from fastapi import Query, HTTPException
 from starlette.responses import JSONResponse
 
-from core.dependencies.authorization import get_user, oauth2_scheme
-from core.dependencies.repository import get_repository
+from core.dependencies.authorization import get_user
 from core.models import User, Organization, Project
 from core.models.organizationMember import OrganizationMember
-# from core.repository.crud.folder import FolderCRUDRepository
-from core.repository.crud.organization import OrganizationCRUDRepository
-from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
-from core.repository.crud.permission import PermissionCRUDRepository
 from core.schemas.organization import OrganizationCreateInRequest, OrganizationResponse, SequenceOrganizationResponse, \
     OrganizationDetailInfoResponse, OrganizationInPatch, SequenceAllOrganizationsShortInfoResponse, \
-    OrganizationShortInfoResponse, OrganizationInDelete, OrganizationInfoForEditResponse, OrganizationVisibilityType, \
+    OrganizationShortInfoResponse, OrganizationInfoForEditResponse, OrganizationVisibilityType, \
     OrganizationJoinPolicyType, OrganizationActivityStatusType, OrganizationProjectsShortInfoResponse
-# from core.schemas.user import UserInCreate, UserInLogin, UserInResponse, UserWithToken
-from core.repository.crud.user import UserCRUDRepository
-from core.schemas.project import ProjectsInOrganizationRequest, ProjectManagerInfo
-from core.services.domain.project import ProjectService, get_project_service
-from core.services.securities.auth import jwt_generator
-from core.utilities.exceptions.database import EntityAlreadyExists
-from core.utilities.exceptions.http.exc_400 import (
-    http_exc_400_credentials_bad_signin_request,
-    http_exc_400_credentials_bad_signup_request,
-)
+from core.schemas.project import ProjectManagerInfo
+from core.services.domain.organization import get_organization_service, OrganizationService
 from core.services.domain.permission import PermissionService, get_permission_service
+from core.services.domain.project import ProjectService, get_project_service
 
 router = fastapi.APIRouter(prefix="/org", tags=["organization"])
 
-# from core.services.domain import organization as organization_service
-from core.services.domain.organization import get_organization_service, OrganizationService
-from templates import templates
 
-"""
-    ----------------------------------------------------------
-"""
 
 
 @router.get("/", response_class=JSONResponse)
 async def get_all_organizations(
-        request: Request,
-        response: Response,
         organization_service: OrganizationService = Depends(get_organization_service),
 ) -> JSONResponse:
     try:
@@ -62,8 +40,6 @@ async def get_all_organizations(
 
 @router.get("/all-short-info", response_class=JSONResponse)
 async def get_all_organizations_short_info(
-        request: Request,
-        response: Response,
         user: User = Depends(get_user),
         organization_service: OrganizationService = Depends(get_organization_service),
 ) -> JSONResponse:
@@ -83,8 +59,6 @@ async def get_all_organizations_short_info(
 
 @router.get("/info", response_class=JSONResponse)
 async def get_organization_info_by_id(
-        request: Request,
-        response: Response,
         org_id: int,
         user: User = Depends(get_user),
         organization_service: OrganizationService = Depends(get_organization_service),
@@ -108,8 +82,6 @@ async def get_organization_info_by_id(
 
 @router.get("/info-for-edit", response_model=OrganizationInfoForEditResponse)
 async def get_organization_info_for_edit_by_id(
-        request: Request,
-        response: Response,
         org_id: int,
         user: User = Depends(get_user),
         organization_service: OrganizationService = Depends(get_organization_service),
@@ -119,7 +91,6 @@ async def get_organization_info_for_edit_by_id(
         org: Organization = await organization_service.get_organization_by_id(
             org_id=org_id,
         )
-        # check permissions
         allow_user_edit: bool = \
             await permission_service.can_user_edit_organization(
                 user_id=user.id,
@@ -143,8 +114,6 @@ async def get_organization_info_for_edit_by_id(
 
 @router.get("/detail", response_model=OrganizationDetailInfoResponse)
 async def get_organization_detail_info_by_id(
-        request: Request,
-        response: Response,
         org_id: int = Query(),
         user: User = Depends(get_user),
         organization_service: OrganizationService = Depends(get_organization_service),
@@ -193,8 +162,6 @@ async def get_organization_detail_info_by_id(
 
 @router.post("/", response_class=JSONResponse)
 async def create_organization(
-        request: Request,
-        response: Response,
         user: User = Depends(get_user),
         org_create_in_request_schema: OrganizationCreateInRequest = Body(...),
         organization_service: OrganizationService = Depends(get_organization_service),
@@ -212,14 +179,11 @@ async def create_organization(
 
 @router.patch("/", response_class=JSONResponse)
 async def patch_organization(
-        request: Request,
-        response: Response,
         org_patch_form: OrganizationInPatch,
         user: User = Depends(get_user),
         organization_service: OrganizationService = Depends(get_organization_service),
         permission_service: PermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
-    # check permissions
     flag: bool = \
         await permission_service.can_user_edit_organization(
             user_id=user.id,
@@ -246,9 +210,6 @@ async def patch_organization(
 
 @router.get("/projects-short-info", response_model=Sequence[OrganizationProjectsShortInfoResponse])
 async def get_organization_projects_short_info(
-        request: Request,
-        response: Response,
-        #projects_in_org_schema: ProjectsInOrganizationRequest,
         org_id: int = Query(),
         user: User = Depends(get_user),
         organization_service: OrganizationService = Depends(get_organization_service),
@@ -290,44 +251,3 @@ async def get_organization_projects_short_info(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-
-
-#
-# @router.delete("/", response_class=HTMLResponse)
-# async def delete_organization(
-#         request: Request,
-#         response: Response,
-#         org_delete_form: OrganizationInDelete,
-#         user: User = Depends(get_user),
-#         organization_service: OrganizationService = Depends(get_organization_service),
-#         permission_service: PermissionService = Depends(get_permission_service),
-# ) -> JSONResponse:
-#
-#     org: bool = await organization_service.delete_organization(org=org_delete_form.id, user=user)
-#     if not org:
-#
-#     flag: bool = \
-#         await permission_service.can_user_edit_organization(
-#             user_id=user.id,
-#             org_id=org_patch_form.id,
-#         )
-#
-#     if not flag:
-#         raise HTTPException(status_code=400, detail="Not allowed")
-#
-#     org: Organization = \
-#         await organization_service.patch_organization_by_id(
-#             org_id=org_patch_form.id,
-#             name=org_patch_form.name,
-#             short_description=org_patch_form.short_description,
-#             long_description=org_patch_form.long_description,
-#         )
-#
-#     if not org:
-#         raise HTTPException(status_code=404)
-#
-#     return JSONResponse({"message": "its ok"})
-
-"""
-    ----------------------------------------------------------
-"""

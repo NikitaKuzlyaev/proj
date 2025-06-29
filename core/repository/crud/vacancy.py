@@ -30,6 +30,7 @@ from sqlalchemy.orm import aliased
 
 Manager = aliased(User)
 
+
 class VacancyCRUDRepository(BaseCRUDRepository):
 
     # async def get_all_projects(
@@ -53,7 +54,6 @@ class VacancyCRUDRepository(BaseCRUDRepository):
             project_id: int,
             user_id: int,
     ) -> Sequence[ProjectVacanciesShortInfoResponse]:
-
         stmt = (
             select(
                 Vacancy,

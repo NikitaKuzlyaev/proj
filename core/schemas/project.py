@@ -68,7 +68,7 @@ class ProjectPatchRequest(BaseSchemaModel):
     activity_status: ProjectActivityStatusType
 
 
-class ProjectFullInfoRequest(BaseSchemaModel):
+class ProjectFullInfoResponse(BaseSchemaModel):
     org_id: int
     name: str
     short_description: Optional[str] = None
@@ -79,6 +79,14 @@ class ProjectFullInfoRequest(BaseSchemaModel):
     open_vacancies: Optional[int] = Field(default=0)
     team_current_size: Optional[int] = Field(default=0)
     team_full_size: Optional[int] = Field(default=0)
+
+
+class CreatedProjectResponse(BaseSchemaModel):
+    project_id: int
+
+
+class PatchedProjectResponse(BaseSchemaModel):
+    project_id: int
 
 
 class ProjectInUpdate(BaseSchemaModel):

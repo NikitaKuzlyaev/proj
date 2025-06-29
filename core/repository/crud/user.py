@@ -57,6 +57,17 @@ class UserCRUDRepository(BaseCRUDRepository):
 
         return user
 
+    async def get_user_by_id(
+            self,
+            user_id: int,
+    ) -> User:
+        user = await self.async_session.scalar(select(User).where(User.id == user_id))
+
+        if not user:
+            raise EntityDoesNotExist("")
+
+        return user
+
     # Debug!!!!
     async def get_all_users(
             self,

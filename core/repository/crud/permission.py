@@ -39,37 +39,81 @@ class PermissionCRUDRepository(BaseCRUDRepository):
         result = await self.async_session.execute(stmt)
         return bool(result.scalar_one_or_none())
 
+    async def search_exist_permission(
+            self,
+            user_id: int,
+            resource_type: str,
+            permission_type: str,
+            resource_id: int,
+    ) -> Permission | None:
+        stmt = select(Permission).where(
+            Permission.user_id == user_id,
+            Permission.resource_type == resource_type,
+            Permission.resource_id == resource_id,
+            Permission.permission_type == permission_type
+        )
+        permission = await self.async_session.execute(stmt)
+        permission = permission.scalar_one_or_none()
+        return permission
+
+    async def create_permission(
+            self,
+            user_id: int,
+            resource_type: str,
+            permission_type: str,
+            resource_id: int,
+    ) -> Permission | None:
+        permission: Permission | None = (
+            await self.search_exist_permission(
+                user_id=user_id,
+                resource_type=resource_type,
+                permission_type=permission_type,
+                resource_id=resource_id,
+            )
+        )
+        if permission:
+            return permission
+
+        permission: Permission = Permission(
+            user_id=user_id,
+            resource_type=ResourceType(resource_type),
+            resource_id=resource_id,
+            permission_type=PermissionType(permission_type),
+        )
+        self.async_session.add(instance=permission)
+        await self.async_session.commit()
+        await self.async_session.refresh(instance=permission)
+        return permission
+
+    async def allow_user_edit_vacancy(
+            self,
+            user_id: int,
+            vacancy_id: int,
+    ) -> Permission:
+        permission: Permission = (
+            await self.create_permission(
+                user_id=user_id,
+                resource_type=ResourceType.VACANCY.value,
+                permission_type=PermissionType.EDIT_VACANCY.value,
+                resource_id=vacancy_id,
+            )
+        )
+        return permission
+
     async def allow_user_edit_organization(
             self,
             user_id: int,
             org_id: int
     ) -> Permission:
-        print("allow_user_edit_organization",'\n'*10)
-
-        # Попытка найти уже существующее разрешение
-        stmt = select(Permission).where(
-            Permission.user_id == user_id,
-            Permission.resource_type == ResourceType.ORGANIZATION.value,
-            Permission.resource_id == org_id,
-            Permission.permission_type == PermissionType.EDIT_ORGANIZATION.value
+        permission: Permission  = (
+            await self.create_permission(
+                user_id=user_id,
+                resource_type=ResourceType.ORGANIZATION.value,
+                permission_type=PermissionType.EDIT_ORGANIZATION.value,
+                resource_id=org_id,
+            )
         )
-        permission = await self.async_session.execute(stmt)
-        permission = permission.scalar_one_or_none()
-        if permission:
-            print("here", permission,'\n'*10)
-            return permission
-
-        # Если разрешения нет — создаём
-        new_permission = Permission(
-            user_id=user_id,
-            resource_type=ResourceType.ORGANIZATION.value,
-            resource_id=org_id,
-            permission_type=PermissionType.EDIT_ORGANIZATION.value,
-        )
-        self.async_session.add(instance=new_permission)
-        await self.async_session.commit()
-        await self.async_session.refresh(instance=new_permission)
-        return new_permission
+        return permission
 
     async def can_user_create_projects_inside_organization(
             self,
@@ -84,7 +128,6 @@ class PermissionCRUDRepository(BaseCRUDRepository):
         )
         result = await self.async_session.execute(stmt)
         return bool(result.scalar_one_or_none())
-
 
     async def can_user_edit_project(
             self,

@@ -27,7 +27,7 @@ class Vacancy(Base):
     creator_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False)
     project_id: Mapped[int] = mapped_column(ForeignKey("project.id"), nullable=False)
 
-    short_description: Mapped[str] = mapped_column(String(length=512), nullable=True)
+    short_description: Mapped[str] = mapped_column(String(length=1024), nullable=True)
     #long_description: Mapped[str] = mapped_column(String(length=4096), nullable=True)
 
     activity_status = Column(String, nullable=False, default=VacancyActivityStatusType.INACTIVE.value)
