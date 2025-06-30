@@ -12,6 +12,7 @@ from core.repository.crud.permission import PermissionCRUDRepository
 from core.schemas.organization import OrganizationInCreate, OrganizationCreateInRequest, OrganizationShortInfoResponse, \
     OrganizationJoinPolicyType, OrganizationVisibilityType, OrganizationActivityStatusType
 from core.schemas.organization_member import OrganizationMemberInCreate
+from core.utilities.exceptions.database import EntityDoesNotExist
 
 
 class OrganizationService:
@@ -26,8 +27,12 @@ class OrganizationService:
         self.permission_repo = permission_repo
 
     async def get_all_organizations(
-            self
+            self,
     ) -> Sequence[Organization]:
+        """
+        Получить все существующие объекты Organization
+        :return: последовательность объектов Organization
+        """
         try:
             orgs: Sequence[Organization] = (
                 await self.org_repo.get_all_organizations()
@@ -38,8 +43,13 @@ class OrganizationService:
 
     async def get_all_organizations_with_short_info(
             self,
-            user: User,
+            user_id: int,
     ) -> Sequence[OrganizationShortInfoResponse]:
+        """
+        Получить короткую информацию о всех Organization доступных пользователю с указанным id
+        :param user_id: id объекта User
+        :return: последовательность объектов OrganizationShortInfoResponse
+        """
         try:
             all_orgs: Sequence[Organization] = (
                 await self.org_repo.get_all_organizations()
@@ -47,7 +57,7 @@ class OrganizationService:
 
             user_orgs: Sequence[OrganizationMember] = (
                 await self.member_repo.get_all_user_organization_memberships(
-                    user_id=user.id,
+                    user_id=user_id,
                 )
             )
 
@@ -75,42 +85,48 @@ class OrganizationService:
             self,
             org_id: int,
     ) -> Organization:
-        try:
-            org: Organization = (
-                await self.org_repo.get_organization_by_id(
-                    org_id=org_id,
-                )
+        """
+        Получить объект Organization по его id
+        :param org_id: id объекта Organization для поиска
+        :return: найденный объект Organization или исключение EntityDoesNotExist
+        """
+        org: Organization | None = (
+            await self.org_repo.get_organization_by_id(
+                org_id=org_id,
             )
-            return org
-        except Exception as e:
-            raise e
+        )
+        if not org:
+            raise EntityDoesNotExist
+
+        return org
 
     async def create_organization(
             self,
-            org_create_in_request_schema: OrganizationCreateInRequest,
-            user: User,
+            name: str,
+            short_description: str,
+            long_description: str,
+            user_id: int,
     ) -> Organization:
+
         try:
             new_org = (
                 await self.org_repo.create_organization(
-                    org_create=OrganizationInCreate(
-                        name=org_create_in_request_schema.name,
-                        short_description=org_create_in_request_schema.short_description,
-                        long_description=org_create_in_request_schema.long_description,
-                        creator_id=user.id,
-                    )
+                    name=name,
+                    short_description=short_description,
+                    long_description=long_description,
+                    creator_id=user_id,
                 )
             )
             new_member = \
                 await self.member_repo.create_organization_member(
                     org_create=OrganizationMemberInCreate(
-                        user_id=user.id,
+                        user_id=user_id,
                         organization_id=new_org.id
                     )
                 )
             new_permission_for_edit_organization = \
                 await self.permission_repo.allow_user_edit_organization(
-                    user_id=user.id,
+                    user_id=user_id,
                     org_id=new_org.id
                 )
             return new_org

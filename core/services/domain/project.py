@@ -12,6 +12,7 @@ from core.repository.crud.permission import PermissionCRUDRepository
 from core.repository.crud.project import ProjectCRUDRepository
 from core.repository.crud.user import UserCRUDRepository
 from core.schemas.project import ProjectFullInfoResponse, CreatedProjectResponse, PatchedProjectResponse
+from core.services.domain.user import UserService, get_user_service
 from core.services.mappers.project import ProjectMapper, get_project_mapper
 from core.utilities.exceptions.database import EntityDoesNotExist
 
@@ -23,15 +24,17 @@ class ProjectService:
             member_repo: OrganizationMemberCRUDRepository,
             permission_repo: PermissionCRUDRepository,
             project_repo: ProjectCRUDRepository,
-            user_service: UserCRUDRepository,
+            user_repo: UserCRUDRepository,
             project_mapper: ProjectMapper,
+            user_service: UserService,
     ):
         self.org_repo = org_repo
         self.member_repo = member_repo
         self.permission_repo = permission_repo
         self.project_repo = project_repo
-        self.user_service = user_service
+        self.user_repo = user_repo
         self.project_mapper = project_mapper
+        self.user_service = user_service
 
     async def get_all_projects_in_organization_by_org_id(
             self,
@@ -48,46 +51,34 @@ class ProjectService:
             self,
             project_id: int,
     ) -> Project:
-        res: Project = (
-            await self.project_repo.get_project_by_id(
-                project_id=project_id,
+        """
+        Получить объект Project по его id
+        :param project_id: id объекта Project
+        :return: объект Project с указанным id
+        """
+        project: Project | None = await self.get_project_by_id(project_id=project_id)
+        if not project:
+            raise EntityDoesNotExist('Project not found')
+        return project
+
+    async def get_project_full_info_response(
+            self,
+            user_id: int,
+            project_id: int,
+    ) -> ProjectFullInfoResponse:
+
+        project: Project  = await self.get_project_by_id(project_id=project_id)
+        user: User = await self.user_service.get_user_by_id(user_id=user_id)
+
+        res: ProjectFullInfoResponse = (
+            self.project_mapper.get_project_full_info_response(
+                project=project,
+                manager=user,
             )
         )
         return res
 
-    async def get_project_full_info_response(
-            self,
-            project_id: int,
-            user_id: int,
-    ) -> ProjectFullInfoResponse:
 
-        try:
-            project: Project = (
-                await self.project_repo.get_project_by_id(
-                    project_id=project_id,
-                )
-            )
-            if not project:
-                raise EntityDoesNotExist("")
-
-            user: User = (
-                await self.user_service.get_user_by_id(
-                    user_id=user_id,
-                )
-            )
-            if not user:
-                raise EntityDoesNotExist("")
-
-            res: ProjectFullInfoResponse = (
-                self.project_mapper.get_project_full_info_response(
-                    project=project,
-                    manager=user,
-                )
-            )
-            return res
-
-        except Exception as e:
-            raise e
 
     async def create_project(
             self,
@@ -174,14 +165,16 @@ def get_project_service(
         member_repo: OrganizationMemberCRUDRepository = Depends(get_repository(OrganizationMemberCRUDRepository)),
         permission_repo: PermissionCRUDRepository = Depends(get_repository(PermissionCRUDRepository)),
         project_repo: ProjectCRUDRepository = Depends(get_repository(ProjectCRUDRepository)),
-        user_service: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
+        user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
         project_mapper: ProjectMapper = Depends(get_project_mapper),
+        user_service: UserService = Depends(get_user_service),
 ) -> ProjectService:
     return ProjectService(
         org_repo=org_repo,
         member_repo=member_repo,
         permission_repo=permission_repo,
         project_repo=project_repo,
-        user_service=user_service,
+        user_repo=user_repo,
         project_mapper=project_mapper,
+        user_service=user_service,
     )

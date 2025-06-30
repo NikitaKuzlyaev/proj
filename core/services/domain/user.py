@@ -1,0 +1,68 @@
+from typing import Sequence
+
+from fastapi import Depends
+from fastapi import HTTPException
+
+from core.dependencies.repository import get_repository
+from core.models import Project, User
+from core.models.vacancy import Vacancy
+from core.repository.crud.organization import OrganizationCRUDRepository
+from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
+from core.repository.crud.project import ProjectCRUDRepository
+from core.repository.crud.user import UserCRUDRepository
+from core.repository.crud.vacancy import VacancyCRUDRepository
+from core.schemas.permission import PermissionsShortResponse
+from core.schemas.project import ProjectVacanciesShortInfoResponse
+from core.schemas.vacancy import VacancyShortInfoResponse, VacancyCreateResponse, VacancyPatchResponse
+from core.services.domain.permission import PermissionService, get_permission_service
+from core.services.mappers.vacancy import VacancyMapper, get_vacancy_mapper
+from core.utilities.exceptions.database import EntityDoesNotExist
+
+
+class UserService:
+    def __init__(
+            self,
+            org_repo: OrganizationCRUDRepository,
+            member_repo: OrganizationMemberCRUDRepository,
+            project_repo: ProjectCRUDRepository,
+            vacancy_repo: VacancyCRUDRepository,
+            vacancy_mapper: VacancyMapper,
+            permission_service: PermissionService,
+            user_repo: UserCRUDRepository,
+    ):
+        self.org_repo = org_repo
+        self.member_repo = member_repo
+        self.project_repo = project_repo
+        self.vacancy_repo = vacancy_repo
+        self.vacancy_mapper = vacancy_mapper
+        self.permission_service = permission_service
+        self.user_repo = user_repo
+
+    async def get_user_by_id(
+            self,
+            user_id: int,
+    ) -> User:
+        user: User | None = await self.user_repo.get_user_by_id(user_id=user_id)
+        if not user:
+            raise EntityDoesNotExist('User not found')
+        return user
+
+
+def get_user_service(
+        org_repo: OrganizationCRUDRepository = Depends(get_repository(OrganizationCRUDRepository)),
+        member_repo: OrganizationMemberCRUDRepository = Depends(get_repository(OrganizationMemberCRUDRepository)),
+        project_repo: ProjectCRUDRepository = Depends(get_repository(ProjectCRUDRepository)),
+        vacancy_repo: VacancyCRUDRepository = Depends(get_repository(VacancyCRUDRepository)),
+        vacancy_mapper: VacancyMapper = Depends(get_vacancy_mapper),
+        permission_service: PermissionService = Depends(get_permission_service),
+        user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
+) -> UserService:
+    return UserService(
+        org_repo=org_repo,
+        member_repo=member_repo,
+        project_repo=project_repo,
+        vacancy_repo=vacancy_repo,
+        vacancy_mapper=vacancy_mapper,
+        permission_service=permission_service,
+        user_repo=user_repo,
+    )

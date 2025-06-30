@@ -44,7 +44,7 @@ async def get_all_organizations_short_info(
     try:
         orgs: Sequence[OrganizationShortInfoResponse] = \
             await organization_service.get_all_organizations_with_short_info(
-                user=user,
+                user_id=user.id,
             )
 
         org_response = SequenceAllOrganizationsShortInfoResponse.model_validate({"body": orgs})
@@ -173,8 +173,8 @@ async def create_organization(
     try:
         org: Organization = (
             await organization_service.create_organization(
-                org_create_in_request_schema=org_create_in_request_schema,
-                user=user,
+                user_id=user.id,
+                **org_create_in_request_schema.model_dump(),
             )
         )
         org_response = OrganizationResponse.model_validate(org)

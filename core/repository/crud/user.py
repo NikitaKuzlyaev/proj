@@ -81,21 +81,21 @@ class UserCRUDRepository(BaseCRUDRepository):
     async def get_user_by_id(
             self,
             user_id: int,
-    ) -> User:
-        user = (
-            await self.async_session.scalar(
-                select(
-                    User
-                ).where(
-                    User.id == user_id,
-                )
+    ) -> User | None:
+        """
+        Возвращает объект User с указанным id
+        :param user_id: id объекта User
+        :return: объект User c указанным user_id или None
+        """
+        stmt = (
+            select(
+                User
+            ).where(
+                User.id == user_id,
             )
         )
-
-        if not user:
-            raise EntityDoesNotExist("")
-
-        return user
+        res = await self.async_session.execute(stmt)
+        return res.one_or_none()
 
     # Debug!!!!
     async def get_all_users(
