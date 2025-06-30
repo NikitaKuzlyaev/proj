@@ -5,35 +5,61 @@ from sqlalchemy import select
 from core.dependencies.repository import get_repository
 from core.models.organizationMember import OrganizationMember
 from core.repository.crud.base import BaseCRUDRepository
-from core.schemas.organization_member import OrganizationMemberInCreate
 
 
 class OrganizationMemberCRUDRepository(BaseCRUDRepository):
 
     async def get_organization_members_by_user_id(
             self,
-            user_id: int
+            user_id: int,
     ) -> Sequence[OrganizationMember]:
-        stmt = select(OrganizationMember).where(OrganizationMember.user_id == user_id)
-        result = await self.async_session.execute(stmt)
+        """
+        Получает объекты OrganizationMember с OrganizationMember.user_id == user_id
+        :param user_id: id объекта User
+        :return: последовательность объектов OrganizationMember
+        """
+        result = await self.async_session.execute(
+            select(
+                OrganizationMember
+            ).where(
+                OrganizationMember.user_id == user_id
+            )
+        )
         return result.scalars().all()
 
     async def get_organization_members_by_org_id(
             self,
-            org_id: int
-    ) -> Sequence[OrganizationMember]:
-        stmt = select(OrganizationMember).where(OrganizationMember.organization_id == org_id)
-        result = await self.async_session.execute(stmt)
+            org_id: int,
+    ) -> Sequence[OrganizationMember] | None:
+        """
+        Получает объекты OrganizationMember с OrganizationMember.organization_id == org_id
+        :param org_id: id объекта Organization
+        :return: последовательность объектов OrganizationMember
+        """
+        result = await self.async_session.execute(
+            select(
+                OrganizationMember
+            ).where(
+                OrganizationMember.organization_id == org_id
+            )
+        )
         return result.scalars().all()
 
     async def create_organization_member(
             self,
-            org_create: OrganizationMemberInCreate
+            user_id: int,
+            org_id: int,
     ) -> OrganizationMember:
+        """
+        Создает новый объект OrganizationMember с ключами на объекты User и Organization
+        :param user_id: id объекта User
+        :param org_id: id объекта Organization
+        :return: возвращает созданный объект OrganizationMember
+        """
         new_org_member: OrganizationMember = (
             OrganizationMember(
-                user_id=org_create.user_id,
-                organization_id=org_create.organization_id,
+                user_id=user_id,
+                organization_id=org_id,
             )
         )
         self.async_session.add(instance=new_org_member)
@@ -43,10 +69,23 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
 
     async def get_all_user_organization_memberships(
             self,
-            user_id: int
-    ) -> Sequence[OrganizationMember]:
-        query = select(OrganizationMember).where(OrganizationMember.user_id == user_id)
-        result = await self.async_session.execute(query)
+            user_id: int,
+    ) -> Sequence[OrganizationMember] | None:
+        """
+        Получить все объекты OrganizationMember связанные по ключу с User c id равным user_id
+        :param user_id: id объекта User
+        :return: последовательность объектов OrganizationMember
+        """
+        result = await self.async_session.execute(
+            select(
+                OrganizationMember
+            ).where(
+                OrganizationMember.user_id == user_id
+            )
+        )
         return result.scalars().all()
 
-org_member_repo = get_repository(repo_type=OrganizationMemberCRUDRepository)
+
+org_member_repo = get_repository(
+    repo_type=OrganizationMemberCRUDRepository
+)

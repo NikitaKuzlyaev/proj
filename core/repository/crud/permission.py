@@ -1,26 +1,11 @@
 from sqlalchemy import select
 
 from core.dependencies.repository import get_repository
-from core.models import Project
 from core.models.permissions import Permission, PermissionType, ResourceType
 from core.repository.crud.base import BaseCRUDRepository
 
 
 class PermissionCRUDRepository(BaseCRUDRepository):
-
-    async def can_user_edit_organization(
-            self,
-            user_id: int,
-            org_id: int
-    ) -> bool:
-        stmt = select(Permission).where(
-            Permission.user_id == user_id,
-            Permission.resource_id == org_id,
-            Permission.resource_type == ResourceType.ORGANIZATION.value,
-            Permission.permission_type == PermissionType.EDIT_ORGANIZATION.value,
-        )
-        result = await self.async_session.execute(stmt)
-        return bool(result.scalar_one_or_none())
 
     async def search_exist_permission(
             self,
@@ -29,13 +14,24 @@ class PermissionCRUDRepository(BaseCRUDRepository):
             permission_type: str,
             resource_id: int,
     ) -> Permission | None:
-        stmt = select(Permission).where(
-            Permission.user_id == user_id,
-            Permission.resource_type == resource_type,
-            Permission.resource_id == resource_id,
-            Permission.permission_type == permission_type
+        """
+        Найти существующий Permission с указанными параметрами
+        :param user_id: id объекта User
+        :param resource_type: тип ресурса (str, Enum)
+        :param permission_type: тип разрешения (str, Enum)
+        :param resource_id: id ресурса
+        :return: существующий Permission или None
+        """
+        permission = await self.async_session.execute(
+            select(
+                Permission
+            ).where(
+                Permission.user_id == user_id,
+                Permission.resource_type == resource_type,
+                Permission.resource_id == resource_id,
+                Permission.permission_type == permission_type
+            )
         )
-        permission = await self.async_session.execute(stmt)
         permission = permission.scalar_one_or_none()
         return permission
 
@@ -46,6 +42,14 @@ class PermissionCRUDRepository(BaseCRUDRepository):
             permission_type: str,
             resource_id: int,
     ) -> Permission | None:
+        """
+        Создать Permission с указанными параметрами
+        :param user_id: id объекта User
+        :param resource_type: тип ресурса (str, Enum)
+        :param permission_type: тип разрешения (str, Enum)
+        :param resource_id: id ресурса
+        :return: созданный или существующий Permission
+        """
         permission: Permission | None = (
             await self.search_exist_permission(
                 user_id=user_id,
@@ -73,6 +77,12 @@ class PermissionCRUDRepository(BaseCRUDRepository):
             user_id: int,
             vacancy_id: int,
     ) -> Permission:
+        """
+        Разрешить User редактирование Vacancy
+        :param user_id: id объекта User
+        :param vacancy_id: id объекта Vacancy
+        :return: Созданный или существующий Permission
+        """
         permission: Permission = (
             await self.create_permission(
                 user_id=user_id,
@@ -86,8 +96,14 @@ class PermissionCRUDRepository(BaseCRUDRepository):
     async def allow_user_edit_organization(
             self,
             user_id: int,
-            org_id: int
+            org_id: int,
     ) -> Permission:
+        """
+        Разрешить User редактирование Organization
+        :param user_id: id объекта User
+        :param org_id: id объекта Organization
+        :return: Созданный или существующий Permission
+        """
         permission: Permission = (
             await self.create_permission(
                 user_id=user_id,
@@ -98,35 +114,76 @@ class PermissionCRUDRepository(BaseCRUDRepository):
         )
         return permission
 
-    async def can_user_create_projects_inside_organization(
+    async def can_user_edit_organization(
             self,
             user_id: int,
             org_id: int
     ) -> bool:
-        stmt = select(
-            Permission
-        ).where(
-            Permission.user_id == user_id,
-            Permission.resource_id == org_id,
-            Permission.resource_type == ResourceType.ORGANIZATION.value,
-            Permission.permission_type == PermissionType.CREATE_PROJECTS_INSIDE_ORGANIZATION.value,
+        """
+        Узнать существование Permission на редактирование Organization для User
+        :param user_id: id объекта User
+        :param org_id: id объекта Organization
+        :return: True / False
+        """
+        result = await self.async_session.execute(
+            select(
+                Permission
+            ).where(
+                Permission.user_id == user_id,
+                Permission.resource_id == org_id,
+                Permission.resource_type == ResourceType.ORGANIZATION.value,
+                Permission.permission_type == PermissionType.EDIT_ORGANIZATION.value,
+            )
         )
-        result = await self.async_session.execute(stmt)
+        return bool(result.scalar_one_or_none())
+
+    async def can_user_create_projects_inside_organization(
+            self,
+            user_id: int,
+            org_id: int,
+    ) -> bool:
+        """
+        Узнать существование Permission на создание Project для User внутри Organization
+        :param user_id: id объекта User
+        :param org_id: id объекта Organization
+        :return: True / False
+        """
+        result = await self.async_session.execute(
+            select(
+                Permission
+            ).where(
+                Permission.user_id == user_id,
+                Permission.resource_id == org_id,
+                Permission.resource_type == ResourceType.ORGANIZATION.value,
+                Permission.permission_type == PermissionType.CREATE_PROJECTS_INSIDE_ORGANIZATION.value
+            )
+        )
         return bool(result.scalar_one_or_none())
 
     async def can_user_edit_project(
             self,
             user_id: int,
-            project_id: int
+            project_id: int,
     ) -> bool:
-        stmt = select(
-            Project
-        ).where(
-            Project.id == project_id,
+        """
+        Узнать существование Permission на редактирование Project для User
+        :param user_id: id объекта User
+        :param project_id: id объекта Project
+        :return: True / False
+        """
+        result = await self.async_session.execute(
+            select(
+                Permission
+            ).where(
+                Permission.user_id == user_id,
+                Permission.resource_id == project_id,
+                Permission.resource_type == ResourceType.PROJECT.value,
+                Permission.permission_type == PermissionType.EDIT_PROJECT.value
+            )
         )
-        res = await self.async_session.execute(stmt)
-        project: Project = res.scalar_one_or_none()
-        return project.creator_id == user_id
+        return bool(result.scalar_one_or_none())
 
 
-permission_repo = get_repository(repo_type=PermissionCRUDRepository)
+permission_repo = get_repository(
+    repo_type=PermissionCRUDRepository
+)

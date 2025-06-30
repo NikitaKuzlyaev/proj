@@ -12,23 +12,25 @@ from core.repository.crud.base import BaseCRUDRepository
 from core.schemas.project import ProjectManagerInfo, ProjectOfVacancyInfo, ProjectVacanciesShortInfoResponse
 from core.schemas.vacancy import VacancyActivityStatusType, VacancyVisibilityType
 
-Manager = aliased(User)
-
 
 class VacancyCRUDRepository(BaseCRUDRepository):
 
     async def get_all_vacancies_in_project(
             self,
             project_id: int,
-    ) -> Sequence[Vacancy]:
-        stmt = (
+    ) -> Sequence[Vacancy] | None:
+        """
+        Получить все объекты Vacancy c Vacancy.project_id == project_id
+        :param project_id: id объекта Project
+        :return: последовательность объектов Vacancy или None
+        """
+        result = await self.async_session.execute(
             select(
                 Vacancy
             ).where(
                 Vacancy.project_id == project_id,
             )
         )
-        result = await self.async_session.execute(stmt)
         vacancies = result.scalars().all()
         return vacancies
 
@@ -41,15 +43,15 @@ class VacancyCRUDRepository(BaseCRUDRepository):
             select(
                 Vacancy,
                 Project,
-                Manager,
+                User,
                 Permission.id.label("permission_id_for_edit_vacancy"),
             )
             .join(
                 Project,
                 Project.id == Vacancy.project_id,
             )
-            .join(Manager,
-                  Manager.id == Vacancy.creator_id,
+            .join(User,
+                  User.id == Vacancy.creator_id,
                   )
             .outerjoin(
                 Permission,
@@ -71,7 +73,7 @@ class VacancyCRUDRepository(BaseCRUDRepository):
                 Tuple[
                     Vacancy,
                     Project,
-                    Manager,
+                    User,
                     int | None
                 ]
             ]
@@ -112,9 +114,19 @@ class VacancyCRUDRepository(BaseCRUDRepository):
     async def get_vacancy_by_id(
             self,
             vacancy_id: int,
-    ) -> Vacancy:
-        stmt = select(Vacancy).where(Vacancy.id == vacancy_id)
-        result = await self.async_session.execute(stmt)
+    ) -> Vacancy | None:
+        """
+        Получить объект Vacancy с указанным id
+        :param vacancy_id: id объекта Vacancy
+        :return: объект Vacancy или None
+        """
+        result = await self.async_session.execute(
+            select(
+                Vacancy
+            ).where(
+                Vacancy.id == vacancy_id
+            )
+        )
         vacancy = result.scalars().one_or_none()
         return vacancy
 

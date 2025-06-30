@@ -119,10 +119,8 @@ class OrganizationService:
             )
             new_member = \
                 await self.member_repo.create_organization_member(
-                    org_create=OrganizationMemberInCreate(
-                        user_id=user_id,
-                        organization_id=new_org.id
-                    )
+                    user_id=user_id,
+                    org_id=new_org.id,
                 )
             new_permission_for_edit_organization = \
                 await self.permission_repo.allow_user_edit_organization(

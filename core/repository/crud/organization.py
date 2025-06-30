@@ -5,7 +5,6 @@ from sqlalchemy import select, update, delete
 from core.dependencies.repository import get_repository
 from core.models.organization import Organization
 from core.repository.crud.base import BaseCRUDRepository
-from core.schemas.organization import OrganizationInCreate
 
 
 class OrganizationCRUDRepository(BaseCRUDRepository):
@@ -20,7 +19,18 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
             activity_status: str,
             join_policy: str,
     ) -> Organization | None:
-        stmt = (
+        """
+        Обновляет поля объекта Organization на указанные в параметрах
+        :param org_id: id объекта Organization для изменения
+        :param name: название
+        :param short_description: короткое описание
+        :param long_description: длинное описание
+        :param visibility: тип видимости (str, Enum)
+        :param activity_status: статус активности (str, Enum)
+        :param join_policy: политика вступления (str, Enum)
+        :return: обновленные объект Organization или None
+        """
+        await self.async_session.execute(
             update(
                 Organization
             )
@@ -39,8 +49,6 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
                 synchronize_session="fetch"
             )
         )
-
-        await self.async_session.execute(stmt)
         await self.async_session.commit()
 
         result = await self.async_session.execute(
@@ -59,10 +67,11 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
         Получить все существующие объекты Organization (Дебаг. Не рекомендуется использовать)
         :return: последовательность объектов Organization
         """
-        stmt = select(
-            Organization
+        result = await self.async_session.execute(
+            select(
+                Organization
+            )
         )
-        result = await self.async_session.execute(stmt)
         orgs = result.scalars().all()
         return orgs
 
@@ -75,12 +84,13 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
         :param org_id: id объекта Organization
         :return: объект Organization с указанным id или None
         """
-        stmt = select(
-            Organization
-        ).where(
-            Organization.id == org_id
+        result = await self.async_session.execute(
+            select(
+                Organization
+            ).where(
+                Organization.id == org_id
+            )
         )
-        result = await self.async_session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def create_organization(
@@ -120,14 +130,17 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
         :param org_id: id объекта Organization для удаления
         :return: Ничего не возвращает - None
         """
-        stmt = delete(
-            Organization
-        ).where(
-            Organization.id == org_id
+        await self.async_session.execute(
+            delete(
+                Organization
+            ).where(
+                Organization.id == org_id
+            )
         )
-        await self.async_session.execute(stmt)
         await self.async_session.commit()
         return
 
 
-org_repo = get_repository(repo_type=OrganizationCRUDRepository)
+org_repo = get_repository(
+    repo_type=OrganizationCRUDRepository
+)
