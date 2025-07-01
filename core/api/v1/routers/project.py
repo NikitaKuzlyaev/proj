@@ -3,16 +3,16 @@ from typing import Sequence
 import fastapi
 from fastapi import Depends, Body
 from fastapi import Query, HTTPException
-from fastapi.responses import HTMLResponse
 from starlette.responses import JSONResponse
 
 from core.dependencies.authorization import get_user
 from core.models import User
 from core.schemas.project import ProjectCreateRequest, ProjectFullInfoResponse, ProjectPatchRequest, \
     ProjectVacanciesShortInfoResponse, CreatedProjectResponse, PatchedProjectResponse
-from core.services.domain.project import ProjectService
-from core.services.domain.vacancy import VacancyService, get_vacancy_service
+from core.services.interfaces.project import IProjectService
+from core.services.interfaces.vacancy import IVacancyService
 from core.services.providers.project import get_project_service
+from core.services.providers.vacancy import get_vacancy_service
 
 router = fastapi.APIRouter(prefix="/project", tags=["project"])
 
@@ -21,7 +21,7 @@ router = fastapi.APIRouter(prefix="/project", tags=["project"])
 async def get_project_full_info(
         project_id: int = Query(),
         user: User = Depends(get_user),
-        project_service: ProjectService = Depends(get_project_service),
+        project_service: IProjectService = Depends(get_project_service),
 ) -> JSONResponse:
     try:
         res: ProjectFullInfoResponse = (
@@ -41,7 +41,7 @@ async def get_project_full_info(
 async def get_vacancies_info_in_project(
         project_id: int = Query(),
         user: User = Depends(get_user),
-        vacancy_service: VacancyService = Depends(get_vacancy_service),
+        vacancy_service: IVacancyService = Depends(get_vacancy_service),
 ) -> JSONResponse:
     try:
         vacancies_with_short_info: Sequence[ProjectVacanciesShortInfoResponse] = (
@@ -60,7 +60,7 @@ async def get_vacancies_info_in_project(
 async def create_project(
         user: User = Depends(get_user),
         project_create_schema: ProjectCreateRequest = Body(...),
-        project_service: ProjectService = Depends(get_project_service),
+        project_service: IProjectService = Depends(get_project_service),
 ) -> JSONResponse:
     try:
         created_project_schema: CreatedProjectResponse = (
@@ -79,7 +79,7 @@ async def create_project(
 async def patch_project(
         user: User = Depends(get_user),
         project_patch_schema: ProjectPatchRequest = Body(...),
-        project_service: ProjectService = Depends(get_project_service),
+        project_service: IProjectService = Depends(get_project_service),
 ) -> JSONResponse:
     try:
         patched_project_schema: PatchedProjectResponse = (

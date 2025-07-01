@@ -15,11 +15,11 @@ from core.schemas.organization import OrganizationCreateInRequest, OrganizationR
     OrganizationJoinPolicyType, OrganizationActivityStatusType, OrganizationProjectsShortInfoResponse, \
     OrganizationJoinResponse, OrganizationJoinRequest
 from core.schemas.project import ProjectManagerInfo
-from core.services.interfaces.organization_member import IOrganizationMemberService
-from core.services.providers.organization import get_organization_service
 from core.services.interfaces.organization import IOrganizationService
-from core.services.domain.permission import PermissionService
-from core.services.domain.project import ProjectService
+from core.services.interfaces.organization_member import IOrganizationMemberService
+from core.services.interfaces.permission import IPermissionService
+from core.services.interfaces.project import IProjectService
+from core.services.providers.organization import get_organization_service
 from core.services.providers.organization_member import get_organization_member_service
 from core.services.providers.permission import get_permission_service
 from core.services.providers.project import get_project_service
@@ -112,7 +112,7 @@ async def get_organization_info_for_edit_by_id(
         org_id: int,
         user: User = Depends(get_user),
         organization_service: IOrganizationService = Depends(get_organization_service),
-        permission_service: PermissionService = Depends(get_permission_service),
+        permission_service: IPermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     try:
         org: Organization = (
@@ -147,7 +147,7 @@ async def get_organization_detail_info_by_id(
         org_id: int = Query(),
         user: User = Depends(get_user),
         organization_service: IOrganizationService = Depends(get_organization_service),
-        permission_service: PermissionService = Depends(get_permission_service),
+        permission_service: IPermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     try:
         org: Organization = (
@@ -218,7 +218,7 @@ async def patch_organization(
         org_patch_form: OrganizationInPatch,
         user: User = Depends(get_user),
         organization_service: IOrganizationService = Depends(get_organization_service),
-        permission_service: PermissionService = Depends(get_permission_service),
+        permission_service: IPermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     flag: bool = (
         await permission_service.can_user_edit_organization(
@@ -251,8 +251,8 @@ async def get_organization_projects_short_info(
         org_id: int = Query(),
         user: User = Depends(get_user),
         organization_service: IOrganizationService = Depends(get_organization_service),
-        project_service: ProjectService = Depends(get_project_service),
-        permission_service: PermissionService = Depends(get_permission_service),
+        project_service: IProjectService = Depends(get_project_service),
+        permission_service: IPermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     try:
         org: Organization = \

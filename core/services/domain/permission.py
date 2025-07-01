@@ -59,13 +59,6 @@ class PermissionService(IPermissionService):
             org_id: int,
             user_id: int,
     ) -> bool:
-        # user: User | None = await self.user_repo.get_user_by_id(user_id=user_id)
-        # if not user:
-        #     raise EntityDoesNotExist('User not found')
-        #
-        # org: Organization | None = await self.user_repo.get_user_by_id(user_id=user_id)
-        # if not user:
-        #     raise EntityDoesNotExist('User not found')
 
         flag: bool = (
             await self.permission_repo.can_user_edit_organization(
@@ -212,22 +205,3 @@ class PermissionService(IPermissionService):
         )
         return res
 
-
-# def get_permission_service(
-#         org_repo: OrganizationCRUDRepository = Depends(get_repository(OrganizationCRUDRepository)),
-#         member_repo: OrganizationMemberCRUDRepository = Depends(get_repository(OrganizationMemberCRUDRepository)),
-#         permission_repo: PermissionCRUDRepository = Depends(get_repository(PermissionCRUDRepository)),
-#         permission_mapper: PermissionMapper = Depends(get_permission_mapper),
-#         user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
-#         vacancy_repo: VacancyCRUDRepository = Depends(get_repository(VacancyCRUDRepository)),
-#         project_repo: ProjectCRUDRepository = Depends(get_repository(ProjectCRUDRepository)),
-# ) -> PermissionService:
-#     return PermissionService(
-#         org_repo=org_repo,
-#         member_repo=member_repo,
-#         permission_repo=permission_repo,
-#         permission_mapper=permission_mapper,
-#         user_repo=user_repo,
-#         vacancy_repo=vacancy_repo,
-#         project_repo=project_repo,
-#     )

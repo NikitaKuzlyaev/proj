@@ -1,7 +1,6 @@
 from typing import Sequence, Tuple
 
 from sqlalchemy import select, update, Row, and_
-from sqlalchemy.orm import aliased
 
 from core.dependencies.repository import get_repository
 from core.models import Project

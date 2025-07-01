@@ -7,7 +7,8 @@ from core.dependencies.authorization import get_user
 from core.models import User
 from core.schemas.vacancy import VacancyCreateRequest, VacancyPatchRequest, VacancyShortInfoResponse, \
     VacancyCreateResponse, VacancyPatchResponse
-from core.services.domain.vacancy import VacancyService, get_vacancy_service
+from core.services.interfaces.vacancy import IVacancyService
+from core.services.providers.vacancy import get_vacancy_service
 
 router = fastapi.APIRouter(prefix="/vacancy", tags=["vacancy"])
 
@@ -16,7 +17,7 @@ router = fastapi.APIRouter(prefix="/vacancy", tags=["vacancy"])
 async def get_vacancy_short_info(
         vacancy_id: int = Query(),
         user: User = Depends(get_user),
-        vacancy_service: VacancyService = Depends(get_vacancy_service),
+        vacancy_service: IVacancyService = Depends(get_vacancy_service),
 ) -> JSONResponse:
     try:
         res: VacancyShortInfoResponse = (
@@ -34,7 +35,7 @@ async def get_vacancy_short_info(
 async def create_vacancy(
         vacancy_create_schema: VacancyCreateRequest = Body(...),
         user: User = Depends(get_user),
-        vacancy_service: VacancyService = Depends(get_vacancy_service),
+        vacancy_service: IVacancyService = Depends(get_vacancy_service),
 ) -> JSONResponse:
     try:
         vacancy_create_response: VacancyCreateResponse = (
@@ -53,7 +54,7 @@ async def create_vacancy(
 async def patch_vacancy(
         vacancy_patch_schema: VacancyPatchRequest = Body(...),
         user: User = Depends(get_user),
-        vacancy_service: VacancyService = Depends(get_vacancy_service),
+        vacancy_service: IVacancyService = Depends(get_vacancy_service),
 ) -> JSONResponse:
     try:
         vacancy_patch_response: VacancyPatchResponse = (

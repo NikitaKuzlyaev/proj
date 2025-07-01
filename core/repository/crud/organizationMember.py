@@ -7,6 +7,7 @@ from core.models.organizationMember import OrganizationMember
 from core.repository.crud.base import BaseCRUDRepository
 from core.utilities.loggers.log_decorator import log_calls
 
+
 class OrganizationMemberCRUDRepository(BaseCRUDRepository):
 
     @log_calls

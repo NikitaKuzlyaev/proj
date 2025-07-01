@@ -156,22 +156,3 @@ class ProjectService(IProjectService):
         )
         return user
 
-
-# def get_project_service(
-#         org_repo: OrganizationCRUDRepository = Depends(get_repository(OrganizationCRUDRepository)),
-#         member_repo: OrganizationMemberCRUDRepository = Depends(get_repository(OrganizationMemberCRUDRepository)),
-#         permission_repo: PermissionCRUDRepository = Depends(get_repository(PermissionCRUDRepository)),
-#         project_repo: ProjectCRUDRepository = Depends(get_repository(ProjectCRUDRepository)),
-#         user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
-#         project_mapper: ProjectMapper = Depends(get_project_mapper),
-#         user_service: UserService = Depends(get_user_service),
-# ) -> ProjectService:
-#     return ProjectService(
-#         org_repo=org_repo,
-#         member_repo=member_repo,
-#         permission_repo=permission_repo,
-#         project_repo=project_repo,
-#         user_repo=user_repo,
-#         project_mapper=project_mapper,
-#         user_service=user_service,
-#     )

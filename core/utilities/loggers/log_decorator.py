@@ -1,6 +1,8 @@
 import functools
 import inspect
+
 from core.utilities.loggers.logger import logger
+
 
 def log_calls(func):
     is_coroutine = inspect.iscoroutinefunction(func)

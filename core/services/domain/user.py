@@ -39,22 +39,3 @@ class UserService(IUserService):
             raise EntityDoesNotExist('User not found')
         return user
 
-
-# def get_user_service(
-#         org_repo: OrganizationCRUDRepository = Depends(get_repository(OrganizationCRUDRepository)),
-#         member_repo: OrganizationMemberCRUDRepository = Depends(get_repository(OrganizationMemberCRUDRepository)),
-#         project_repo: ProjectCRUDRepository = Depends(get_repository(ProjectCRUDRepository)),
-#         vacancy_repo: VacancyCRUDRepository = Depends(get_repository(VacancyCRUDRepository)),
-#         vacancy_mapper: VacancyMapper = Depends(get_vacancy_mapper),
-#         permission_service: PermissionService = Depends(get_permission_service),
-#         user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
-# ) -> UserService:
-#     return UserService(
-#         org_repo=org_repo,
-#         member_repo=member_repo,
-#         project_repo=project_repo,
-#         vacancy_repo=vacancy_repo,
-#         vacancy_mapper=vacancy_mapper,
-#         permission_service=permission_service,
-#         user_repo=user_repo,
-#     )
