@@ -16,13 +16,13 @@ from core.schemas.organization import OrganizationCreateInRequest, OrganizationR
     OrganizationJoinResponse, OrganizationJoinRequest
 from core.schemas.project import ProjectManagerInfo
 from core.services.interfaces.organization_member import IOrganizationMemberService
-#from core.services.domain.organization import get_organization_service, OrganizationService
 from core.services.providers.organization import get_organization_service
-#from core.services.providers.provider import get_organization_service
 from core.services.interfaces.organization import IOrganizationService
-from core.services.domain.permission import PermissionService, get_permission_service
-from core.services.domain.project import ProjectService, get_project_service
+from core.services.domain.permission import PermissionService
+from core.services.domain.project import ProjectService
 from core.services.providers.organization_member import get_organization_member_service
+from core.services.providers.permission import get_permission_service
+from core.services.providers.project import get_project_service
 
 router = fastapi.APIRouter(prefix="/org", tags=["organization"])
 
@@ -33,7 +33,6 @@ async def join_organization(
         user: User = Depends(get_user),
         org_member_service: IOrganizationMemberService = Depends(get_organization_member_service),
 ) -> JSONResponse:
-    print("@router.post(join", org_join_request, '\n'*10)
     try:
         result: OrganizationJoinResponse = (
             await org_member_service.join_organization(
@@ -42,7 +41,6 @@ async def join_organization(
             )
         )
         result = result.model_dump()
-        print(result, type(result), '\n'*10)
         return JSONResponse({'body': result})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -69,7 +67,6 @@ async def get_all_organizations_short_info(
         user: User = Depends(get_user),
         organization_service: IOrganizationService = Depends(get_organization_service),
 ) -> JSONResponse:
-    print('@router.get("/all-short-info",', '\n'*10)
     try:
         orgs: Sequence[OrganizationShortInfoResponse] = \
             await organization_service.get_all_organizations_with_short_info(
@@ -93,6 +90,7 @@ async def get_organization_info_by_id(
     try:
         org: Organization = (
             await organization_service.get_organization_by_id(
+                user_id=user.id,
                 org_id=org_id,
             )
         )
@@ -119,6 +117,7 @@ async def get_organization_info_for_edit_by_id(
     try:
         org: Organization = (
             await organization_service.get_organization_by_id(
+                user_id=user.id,
                 org_id=org_id,
             )
         )
@@ -153,6 +152,7 @@ async def get_organization_detail_info_by_id(
     try:
         org: Organization = (
             await organization_service.get_organization_by_id(
+                user_id=user.id,
                 org_id=org_id,
             )
         )
@@ -161,6 +161,7 @@ async def get_organization_detail_info_by_id(
 
         org_members: Sequence[OrganizationMember] = (
             await organization_service.get_organization_members_by_org_id(
+                user_id=user.id,
                 org_id=org_id,
             )
         )
@@ -230,6 +231,7 @@ async def patch_organization(
 
     org: Organization = \
         await organization_service.patch_organization_by_id(
+            user_id=user.id,
             org_id=org_patch_form.id,
             name=org_patch_form.name,
             short_description=org_patch_form.short_description,
@@ -255,6 +257,7 @@ async def get_organization_projects_short_info(
     try:
         org: Organization = \
             await organization_service.get_organization_by_id(
+                user_id=user.id,
                 org_id=org_id
             )
         if not org:
@@ -262,6 +265,7 @@ async def get_organization_projects_short_info(
 
         projects: Sequence[Project] = \
             await project_service.get_all_projects_in_organization_by_org_id(
+                user_id=user.id,
                 org_id=org.id
             )
 

@@ -1,25 +1,16 @@
-from typing import Sequence
-
-from fastapi import Depends
-from fastapi import HTTPException
-
-from core.dependencies.repository import get_repository
-from core.models import Project, User
-from core.models.vacancy import Vacancy
+from core.models import User
 from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
 from core.repository.crud.project import ProjectCRUDRepository
 from core.repository.crud.user import UserCRUDRepository
 from core.repository.crud.vacancy import VacancyCRUDRepository
-from core.schemas.permission import PermissionsShortResponse
-from core.schemas.project import ProjectVacanciesShortInfoResponse
-from core.schemas.vacancy import VacancyShortInfoResponse, VacancyCreateResponse, VacancyPatchResponse
-from core.services.domain.permission import PermissionService, get_permission_service
-from core.services.mappers.vacancy import VacancyMapper, get_vacancy_mapper
+from core.services.interfaces.permission import IPermissionService
+from core.services.interfaces.user import IUserService
+from core.services.mappers.vacancy import VacancyMapper
 from core.utilities.exceptions.database import EntityDoesNotExist
+from core.utilities.loggers.log_decorator import log_calls
 
-
-class UserService:
+class UserService(IUserService):
     def __init__(
             self,
             org_repo: OrganizationCRUDRepository,
@@ -27,7 +18,7 @@ class UserService:
             project_repo: ProjectCRUDRepository,
             vacancy_repo: VacancyCRUDRepository,
             vacancy_mapper: VacancyMapper,
-            permission_service: PermissionService,
+            permission_service: IPermissionService,
             user_repo: UserCRUDRepository,
     ):
         self.org_repo = org_repo
@@ -38,6 +29,7 @@ class UserService:
         self.permission_service = permission_service
         self.user_repo = user_repo
 
+    @log_calls
     async def get_user_by_id(
             self,
             user_id: int,
@@ -48,21 +40,21 @@ class UserService:
         return user
 
 
-def get_user_service(
-        org_repo: OrganizationCRUDRepository = Depends(get_repository(OrganizationCRUDRepository)),
-        member_repo: OrganizationMemberCRUDRepository = Depends(get_repository(OrganizationMemberCRUDRepository)),
-        project_repo: ProjectCRUDRepository = Depends(get_repository(ProjectCRUDRepository)),
-        vacancy_repo: VacancyCRUDRepository = Depends(get_repository(VacancyCRUDRepository)),
-        vacancy_mapper: VacancyMapper = Depends(get_vacancy_mapper),
-        permission_service: PermissionService = Depends(get_permission_service),
-        user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
-) -> UserService:
-    return UserService(
-        org_repo=org_repo,
-        member_repo=member_repo,
-        project_repo=project_repo,
-        vacancy_repo=vacancy_repo,
-        vacancy_mapper=vacancy_mapper,
-        permission_service=permission_service,
-        user_repo=user_repo,
-    )
+# def get_user_service(
+#         org_repo: OrganizationCRUDRepository = Depends(get_repository(OrganizationCRUDRepository)),
+#         member_repo: OrganizationMemberCRUDRepository = Depends(get_repository(OrganizationMemberCRUDRepository)),
+#         project_repo: ProjectCRUDRepository = Depends(get_repository(ProjectCRUDRepository)),
+#         vacancy_repo: VacancyCRUDRepository = Depends(get_repository(VacancyCRUDRepository)),
+#         vacancy_mapper: VacancyMapper = Depends(get_vacancy_mapper),
+#         permission_service: PermissionService = Depends(get_permission_service),
+#         user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
+# ) -> UserService:
+#     return UserService(
+#         org_repo=org_repo,
+#         member_repo=member_repo,
+#         project_repo=project_repo,
+#         vacancy_repo=vacancy_repo,
+#         vacancy_mapper=vacancy_mapper,
+#         permission_service=permission_service,
+#         user_repo=user_repo,
+#     )

@@ -5,11 +5,11 @@ from sqlalchemy import select
 from core.dependencies.repository import get_repository
 from core.models.organizationMember import OrganizationMember
 from core.repository.crud.base import BaseCRUDRepository
-
+from core.utilities.loggers.log_decorator import log_calls
 
 class OrganizationMemberCRUDRepository(BaseCRUDRepository):
 
-
+    @log_calls
     async def get_organization_member_by_user_and_org(
             self,
             org_id: int,
@@ -27,6 +27,7 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
         )
         return result.scalars().one_or_none()
 
+    @log_calls
     async def get_organization_member_by_id(
             self,
             org_member_id: int,
@@ -45,6 +46,7 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
         )
         return result.scalars().one_or_none()
 
+    @log_calls
     async def get_organization_members_by_user_id(
             self,
             user_id: int,
@@ -63,6 +65,7 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
         )
         return result.scalars().all()
 
+    @log_calls
     async def get_organization_members_by_org_id(
             self,
             org_id: int,
@@ -81,6 +84,7 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
         )
         return result.scalars().all()
 
+    @log_calls
     async def create_organization_member(
             self,
             user_id: int,
@@ -103,6 +107,7 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
         await self.async_session.refresh(instance=new_org_member)
         return new_org_member
 
+    @log_calls
     async def get_all_user_organization_memberships(
             self,
             user_id: int,

@@ -1,4 +1,3 @@
-# core/services/providers/organization_member.py
 from fastapi import Depends
 
 from core.dependencies.repository import get_repository
@@ -6,10 +5,11 @@ from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
 from core.repository.crud.permission import PermissionCRUDRepository
 from core.services.domain.organization_member import OrganizationMemberService
-from core.services.domain.user import UserService, get_user_service
+from core.services.domain.user import UserService
 from core.services.interfaces.organization import IOrganizationService
 from core.services.interfaces.organization_member import IOrganizationMemberService
 from core.services.providers.organization import get_organization_service
+from core.services.providers.user import get_user_service
 
 
 def get_organization_member_service(

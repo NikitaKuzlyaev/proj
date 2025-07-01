@@ -1,25 +1,17 @@
 from typing import Sequence
 
-from fastapi import Depends
-
-from core.dependencies.repository import get_repository
 # from core.dependencies.repository import get_repository, get_repository_manual
 from core.models import Organization
 from core.models.organizationMember import OrganizationMember
-from core.models.user import User
 from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
 from core.repository.crud.permission import PermissionCRUDRepository
 from core.schemas.organization import OrganizationShortInfoResponse, \
-    OrganizationJoinPolicyType, OrganizationVisibilityType, OrganizationActivityStatusType, OrganizationJoinResponse
-# from core.services.domain.organization_member import OrganizationMemberService, get_organization_member_service
-from core.services.domain.user import UserService, get_user_service
+    OrganizationJoinPolicyType, OrganizationVisibilityType, OrganizationActivityStatusType
 from core.services.interfaces.organization import IOrganizationService
-from core.services.interfaces.organization_member import IOrganizationMemberService
-# from core.services.providers.organization_member import get_organization_member_service
-# from core.services.providers.organization_member import get_organization_member_service
-from core.utilities.exceptions.database import EntityDoesNotExist, EntityAlreadyExists
-from core.utilities.exceptions.permission import PermissionDenied
+from core.services.interfaces.user import IUserService
+from core.utilities.exceptions.database import EntityDoesNotExist
+from core.utilities.loggers.log_decorator import log_calls
 
 
 class OrganizationService(IOrganizationService):
@@ -28,17 +20,17 @@ class OrganizationService(IOrganizationService):
             org_repo: OrganizationCRUDRepository,
             member_repo: OrganizationMemberCRUDRepository,
             permission_repo: PermissionCRUDRepository,
-            user_service: UserService,
+            user_service: IUserService,
     ):
         self.org_repo = org_repo
         self.member_repo = member_repo
         self.permission_repo = permission_repo
         self.user_service = user_service
 
+    @log_calls
     async def get_all_organizations(
             self,
     ) -> Sequence[Organization]:
-
         try:
             orgs: Sequence[Organization] = (
                 await self.org_repo.get_all_organizations()
@@ -47,6 +39,7 @@ class OrganizationService(IOrganizationService):
         except Exception as e:
             raise e
 
+    @log_calls
     async def get_all_organizations_with_short_info(
             self,
             user_id: int,
@@ -83,8 +76,10 @@ class OrganizationService(IOrganizationService):
         except Exception as e:
             raise e
 
+    @log_calls
     async def get_organization_by_id(
             self,
+            user_id: int,
             org_id: int,
     ) -> Organization:
 
@@ -98,12 +93,13 @@ class OrganizationService(IOrganizationService):
 
         return org
 
+    @log_calls
     async def create_organization(
             self,
+            user_id: int,
             name: str,
             short_description: str,
             long_description: str,
-            user_id: int,
     ) -> Organization:
 
         try:
@@ -129,26 +125,10 @@ class OrganizationService(IOrganizationService):
         except Exception as e:
             raise e
 
-    async def delete_organization(
-            self,
-            org: Organization,
-            user: User,
-    ) -> bool:
-        try:
-            if org.creator_id != user.id:
-                return False
-
-            res: None = \
-                await self.org_repo.delete_organization(
-                    org_id=org.id
-                )
-
-            return True
-        except Exception as e:
-            raise e
-
+    @log_calls
     async def get_organization_members_by_org_id(
             self,
+            user_id: int,
             org_id: int,
     ) -> Sequence[OrganizationMember]:
         try:
@@ -160,8 +140,10 @@ class OrganizationService(IOrganizationService):
         except Exception as e:
             raise e
 
+    @log_calls
     async def patch_organization_by_id(
             self,
+            user_id: int,
             org_id: int,
             name: str,
             short_description: str,
@@ -184,18 +166,3 @@ class OrganizationService(IOrganizationService):
             return org
         except Exception as e:
             raise e
-
-# def get_organization_service(
-#         org_repo: OrganizationCRUDRepository = Depends(get_repository(OrganizationCRUDRepository)),
-#         member_repo: OrganizationMemberCRUDRepository = Depends(get_repository(OrganizationMemberCRUDRepository)),
-#         permission_repo: PermissionCRUDRepository = Depends(get_repository(PermissionCRUDRepository)),
-#         user_service: UserService = Depends(get_user_service),
-#         org_member_service: IOrganizationMemberService = Depends(get_organization_member_service),
-# ) -> OrganizationService:
-#     return OrganizationService(
-#         org_repo=org_repo,
-#         member_repo=member_repo,
-#         permission_repo=permission_repo,
-#         user_service=user_service,
-#         org_member_service=org_member_service,
-#     )

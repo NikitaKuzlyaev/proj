@@ -12,7 +12,7 @@ from core.schemas.admin import AdminPermissionSignature
 from core.schemas.project import ProjectCreateRequest, ProjectFullInfoResponse, ProjectPatchRequest, \
     ProjectVacanciesShortInfoResponse, CreatedProjectResponse, PatchedProjectResponse
 from core.services.admin.admin import AdminService, get_admin_service
-from core.services.domain.project import get_project_service, ProjectService
+from core.services.domain.project import  ProjectService
 from core.services.domain.vacancy import VacancyService, get_vacancy_service
 
 router = fastapi.APIRouter(prefix="/admin", tags=["admin"])

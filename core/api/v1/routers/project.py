@@ -10,8 +10,9 @@ from core.dependencies.authorization import get_user
 from core.models import User
 from core.schemas.project import ProjectCreateRequest, ProjectFullInfoResponse, ProjectPatchRequest, \
     ProjectVacanciesShortInfoResponse, CreatedProjectResponse, PatchedProjectResponse
-from core.services.domain.project import get_project_service, ProjectService
+from core.services.domain.project import ProjectService
 from core.services.domain.vacancy import VacancyService, get_vacancy_service
+from core.services.providers.project import get_project_service
 
 router = fastapi.APIRouter(prefix="/project", tags=["project"])
 

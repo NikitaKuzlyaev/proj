@@ -13,8 +13,10 @@ from core.repository.crud.vacancy import VacancyCRUDRepository
 from core.schemas.permission import PermissionsShortResponse
 from core.schemas.project import ProjectVacanciesShortInfoResponse
 from core.schemas.vacancy import VacancyShortInfoResponse, VacancyCreateResponse, VacancyPatchResponse
-from core.services.domain.permission import PermissionService, get_permission_service
+from core.services.domain.permission import PermissionService
+from core.services.interfaces.permission import IPermissionService
 from core.services.mappers.vacancy import VacancyMapper, get_vacancy_mapper
+from core.services.providers.permission import get_permission_service
 
 
 class VacancyService:
@@ -25,7 +27,7 @@ class VacancyService:
             project_repo: ProjectCRUDRepository,
             vacancy_repo: VacancyCRUDRepository,
             vacancy_mapper: VacancyMapper,
-            permission_service: PermissionService,
+            permission_service: IPermissionService,
     ):
         self.org_repo = org_repo
         self.member_repo = member_repo

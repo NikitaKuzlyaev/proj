@@ -5,10 +5,11 @@ from sqlalchemy import select, update, delete
 from core.dependencies.repository import get_repository
 from core.models.organization import Organization
 from core.repository.crud.base import BaseCRUDRepository
+from core.utilities.loggers.log_decorator import log_calls
 
 
 class OrganizationCRUDRepository(BaseCRUDRepository):
-
+    @log_calls
     async def patch_organization_by_id(
             self,
             org_id: int,
@@ -60,6 +61,7 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
         )
         return result.scalar_one_or_none()
 
+    @log_calls
     async def get_all_organizations(
             self,
     ) -> Sequence[Organization]:
@@ -67,7 +69,6 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
         Получить все существующие объекты Organization (Дебаг. Не рекомендуется использовать)
         :return: последовательность объектов Organization
         """
-        print('async def get_all_organizations', '\n' * 10)
         result = await self.async_session.execute(
             select(
                 Organization
@@ -76,6 +77,7 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
         orgs = result.scalars().all()
         return orgs
 
+    @log_calls
     async def get_organization_by_id(
             self,
             org_id: int
@@ -94,6 +96,7 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
         )
         return result.scalar_one_or_none()
 
+    @log_calls
     async def create_organization(
             self,
             name: str,
@@ -122,6 +125,7 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
         await self.async_session.refresh(instance=new_organization)
         return new_organization
 
+    @log_calls
     async def delete_organization(
             self,
             org_id: int,

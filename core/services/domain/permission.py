@@ -1,6 +1,3 @@
-from fastapi import Depends
-
-from core.dependencies.repository import get_repository
 from core.models import Permission, User, Vacancy, Organization, Project
 from core.models.permissions import ResourceType, PermissionType
 from core.repository.crud.organization import OrganizationCRUDRepository
@@ -11,11 +8,12 @@ from core.repository.crud.user import UserCRUDRepository
 from core.repository.crud.vacancy import VacancyCRUDRepository
 from core.schemas.admin import AdminPermissionSignature
 from core.schemas.permission import PermissionsShortResponse
-from core.services.mappers.permission import get_permission_mapper, PermissionMapper
+from core.services.interfaces.permission import IPermissionService
+from core.services.mappers.permission import PermissionMapper
 from core.utilities.exceptions.database import EntityDoesNotExist
 
 
-class PermissionService:
+class PermissionService(IPermissionService):
     def __init__(
             self,
             org_repo: OrganizationCRUDRepository,
@@ -215,21 +213,21 @@ class PermissionService:
         return res
 
 
-def get_permission_service(
-        org_repo: OrganizationCRUDRepository = Depends(get_repository(OrganizationCRUDRepository)),
-        member_repo: OrganizationMemberCRUDRepository = Depends(get_repository(OrganizationMemberCRUDRepository)),
-        permission_repo: PermissionCRUDRepository = Depends(get_repository(PermissionCRUDRepository)),
-        permission_mapper: PermissionMapper = Depends(get_permission_mapper),
-        user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
-        vacancy_repo: VacancyCRUDRepository = Depends(get_repository(VacancyCRUDRepository)),
-        project_repo: ProjectCRUDRepository = Depends(get_repository(ProjectCRUDRepository)),
-) -> PermissionService:
-    return PermissionService(
-        org_repo=org_repo,
-        member_repo=member_repo,
-        permission_repo=permission_repo,
-        permission_mapper=permission_mapper,
-        user_repo=user_repo,
-        vacancy_repo=vacancy_repo,
-        project_repo=project_repo,
-    )
+# def get_permission_service(
+#         org_repo: OrganizationCRUDRepository = Depends(get_repository(OrganizationCRUDRepository)),
+#         member_repo: OrganizationMemberCRUDRepository = Depends(get_repository(OrganizationMemberCRUDRepository)),
+#         permission_repo: PermissionCRUDRepository = Depends(get_repository(PermissionCRUDRepository)),
+#         permission_mapper: PermissionMapper = Depends(get_permission_mapper),
+#         user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
+#         vacancy_repo: VacancyCRUDRepository = Depends(get_repository(VacancyCRUDRepository)),
+#         project_repo: ProjectCRUDRepository = Depends(get_repository(ProjectCRUDRepository)),
+# ) -> PermissionService:
+#     return PermissionService(
+#         org_repo=org_repo,
+#         member_repo=member_repo,
+#         permission_repo=permission_repo,
+#         permission_mapper=permission_mapper,
+#         user_repo=user_repo,
+#         vacancy_repo=vacancy_repo,
+#         project_repo=project_repo,
+#     )

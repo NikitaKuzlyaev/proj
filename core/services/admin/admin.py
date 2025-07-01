@@ -13,9 +13,11 @@ from core.repository.crud.project import ProjectCRUDRepository
 from core.repository.crud.user import UserCRUDRepository
 from core.schemas.admin import AdminPermissionSignature
 from core.schemas.project import ProjectFullInfoResponse, CreatedProjectResponse, PatchedProjectResponse
-from core.services.domain.permission import PermissionService, get_permission_service
-from core.services.domain.user import UserService, get_user_service
+from core.services.domain.permission import PermissionService
+from core.services.domain.user import UserService
 from core.services.mappers.project import ProjectMapper, get_project_mapper
+from core.services.providers.permission import get_permission_service
+from core.services.providers.user import get_user_service
 from core.utilities.exceptions.database import EntityDoesNotExist
 
 

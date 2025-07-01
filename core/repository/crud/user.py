@@ -9,10 +9,11 @@ from core.schemas.user import UserCreate
 from core.services.security import hash_password, verify_password, create_access_token
 from core.utilities.exceptions.auth import TokenException
 from core.utilities.exceptions.database import EntityAlreadyExists, EntityDoesNotExist
+from core.utilities.loggers.log_decorator import log_calls
 
 
 class UserCRUDRepository(BaseCRUDRepository):
-
+    @log_calls
     async def create_user(
             self,
             data: UserCreate
@@ -39,6 +40,7 @@ class UserCRUDRepository(BaseCRUDRepository):
 
         return user
 
+    @log_calls
     async def authenticate_user(
             self,
             username: str,
@@ -59,6 +61,7 @@ class UserCRUDRepository(BaseCRUDRepository):
 
         return create_access_token({"sub": user.username})
 
+    @log_calls
     async def get_user_by_username(
             self,
             username: str,
@@ -78,6 +81,7 @@ class UserCRUDRepository(BaseCRUDRepository):
 
         return user
 
+    @log_calls
     async def get_user_by_id(
             self,
             user_id: int,
@@ -98,6 +102,7 @@ class UserCRUDRepository(BaseCRUDRepository):
         return res.scalars().one_or_none()
 
     # Debug!!!!
+    @log_calls
     async def get_all_users(
             self,
     ) -> typing.Sequence[User]:

@@ -7,10 +7,12 @@ from core.dependencies.authorization import get_user
 from core.models import User, Organization, Project
 from core.schemas.permission import PermissionsResponse
 from core.services.domain.organization import OrganizationService
-from core.services.domain.permission import PermissionService, get_permission_service
-from core.services.domain.project import get_project_service, ProjectService
+from core.services.domain.permission import PermissionService
+from core.services.domain.project import ProjectService
 from core.services.interfaces.organization import IOrganizationService
 from core.services.providers.organization import get_organization_service
+from core.services.providers.permission import get_permission_service
+from core.services.providers.project import get_project_service
 
 #from core.services.providers.organization import get_organization_service
 #from core.services.providers.provider import get_organization_service
@@ -30,6 +32,7 @@ async def can_user_create_projects_inside_organization(
     try:
         org: Organization = (
             await organization_service.get_organization_by_id(
+                user_id=user.id,
                 org_id=org_id,
             )
         )

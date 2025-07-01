@@ -6,11 +6,40 @@ from core.schemas.organization import OrganizationJoinResponse
 
 class IOrganizationMemberService(Protocol):
 
+    async def join_organization(
+            self,
+            user_id: int,
+            org_id: int,
+            code: int | None = None,
+    ) -> OrganizationJoinResponse:
+        """
+        ???
+
+        Args:
+            user_id: id пользователя совершающего запрос
+            org_id: id организации
+            code: код вступления в организацию
+
+        Returns:
+            OrganizationJoinResponse
+        """
+        ...
+
     async def create_org_member(
             self,
             user_id: int,
             org_id: int,
     ) -> OrganizationMember:
+        """
+        ???
+
+        Args:
+            user_id: id пользователя для которого создать объект членства
+            org_id: id организации
+
+        Returns:
+            OrganizationMember
+        """
         ...
 
     async def get_organization_member_by_user_and_org(
@@ -19,17 +48,30 @@ class IOrganizationMemberService(Protocol):
             org_id: int,
             raise_if_fail: bool = True,
     ) -> OrganizationMember:
+        """
+        ???
+
+        Args:
+            user_id: id пользователя
+            org_id: id организации
+            raise_if_fail:
+
+        Returns:
+            OrganizationMember
+        """
         ...
 
     async def get_organization_member_by_id(
             self,
             org_member_id: int,
     ) -> OrganizationMember:
-        ...
+        """
+        ???
 
-    async def join_organization(
-            self,
-            user_id: int,
-            org_id: int,
-    ) -> OrganizationJoinResponse:
+        Args:
+            org_member_id:
+
+        Returns:
+            OrganizationMember
+        """
         ...
