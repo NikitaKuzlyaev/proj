@@ -8,6 +8,9 @@ from core.schemas.base import BaseSchemaModel
 from core.schemas.project import ProjectManagerInfo
 
 
+class OrganizationJoinResponse(BaseSchemaModel):
+    member_id: Optional[int]
+
 class OrganizationInCreate(BaseSchemaModel):
     name: str
     short_description: Optional[str] = None

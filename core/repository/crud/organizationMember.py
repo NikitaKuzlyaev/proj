@@ -9,6 +9,42 @@ from core.repository.crud.base import BaseCRUDRepository
 
 class OrganizationMemberCRUDRepository(BaseCRUDRepository):
 
+
+    async def get_organization_member_by_user_and_org(
+            self,
+            org_id: int,
+            user_id: int,
+    ) -> OrganizationMember | None:
+
+        result = await self.async_session.execute(
+            select(
+                OrganizationMember
+            ).where(
+                OrganizationMember.organization_id == org_id,
+                OrganizationMember.user_id == user_id,
+
+            )
+        )
+        return result.scalars().one_or_none()
+
+    async def get_organization_member_by_id(
+            self,
+            org_member_id: int,
+    ) -> OrganizationMember | None:
+        """
+        Получить объект OrganizationMember с OrganizationMember.id == org_member_id
+        :param org_member_id: id объекта User
+        :return: объект OrganizationMember или None
+        """
+        result = await self.async_session.execute(
+            select(
+                OrganizationMember
+            ).where(
+                OrganizationMember.id == org_member_id
+            )
+        )
+        return result.scalars().one_or_none()
+
     async def get_organization_members_by_user_id(
             self,
             user_id: int,

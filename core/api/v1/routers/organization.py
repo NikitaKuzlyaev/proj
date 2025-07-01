@@ -12,18 +12,42 @@ from core.models.organizationMember import OrganizationMember
 from core.schemas.organization import OrganizationCreateInRequest, OrganizationResponse, SequenceOrganizationResponse, \
     OrganizationDetailInfoResponse, OrganizationInPatch, SequenceAllOrganizationsShortInfoResponse, \
     OrganizationShortInfoResponse, OrganizationInfoForEditResponse, OrganizationVisibilityType, \
-    OrganizationJoinPolicyType, OrganizationActivityStatusType, OrganizationProjectsShortInfoResponse
+    OrganizationJoinPolicyType, OrganizationActivityStatusType, OrganizationProjectsShortInfoResponse, \
+    OrganizationJoinResponse
 from core.schemas.project import ProjectManagerInfo
-from core.services.domain.organization import get_organization_service, OrganizationService
+#from core.services.domain.organization import get_organization_service, OrganizationService
+from core.services.providers.organization import get_organization_service
+#from core.services.providers.provider import get_organization_service
+from core.services.interfaces.organization import IOrganizationService
 from core.services.domain.permission import PermissionService, get_permission_service
 from core.services.domain.project import ProjectService, get_project_service
 
 router = fastapi.APIRouter(prefix="/org", tags=["organization"])
 
 
+@router.post("/join", response_class=JSONResponse)
+async def join_organization(
+        org_id: int = Body(...,),
+        user: User = Depends(get_user),
+        organization_service: IOrganizationService = Depends(get_organization_service),
+) -> JSONResponse:
+    try:
+        result: OrganizationJoinResponse = (
+            await organization_service.join_organization(
+                user_id=user.id,
+                org_id=org_id,
+            )
+        )
+        result.model_dump()
+        return JSONResponse({'body': result})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/", response_class=JSONResponse)
 async def get_all_organizations(
-        organization_service: OrganizationService = Depends(get_organization_service),
+        user: User = Depends(get_user),
+        organization_service: IOrganizationService = Depends(get_organization_service),
 ) -> JSONResponse:
     try:
         orgs: Sequence[Organization] = (
@@ -39,8 +63,9 @@ async def get_all_organizations(
 @router.get("/all-short-info", response_class=JSONResponse)
 async def get_all_organizations_short_info(
         user: User = Depends(get_user),
-        organization_service: OrganizationService = Depends(get_organization_service),
+        organization_service: IOrganizationService = Depends(get_organization_service),
 ) -> JSONResponse:
+    print('@router.get("/all-short-info",', '\n'*10)
     try:
         orgs: Sequence[OrganizationShortInfoResponse] = \
             await organization_service.get_all_organizations_with_short_info(
@@ -59,7 +84,7 @@ async def get_all_organizations_short_info(
 async def get_organization_info_by_id(
         org_id: int,
         user: User = Depends(get_user),
-        organization_service: OrganizationService = Depends(get_organization_service),
+        organization_service: IOrganizationService = Depends(get_organization_service),
 ) -> JSONResponse:
     try:
         org: Organization = (
@@ -84,7 +109,7 @@ async def get_organization_info_by_id(
 async def get_organization_info_for_edit_by_id(
         org_id: int,
         user: User = Depends(get_user),
-        organization_service: OrganizationService = Depends(get_organization_service),
+        organization_service: IOrganizationService = Depends(get_organization_service),
         permission_service: PermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     try:
@@ -118,7 +143,7 @@ async def get_organization_info_for_edit_by_id(
 async def get_organization_detail_info_by_id(
         org_id: int = Query(),
         user: User = Depends(get_user),
-        organization_service: OrganizationService = Depends(get_organization_service),
+        organization_service: IOrganizationService = Depends(get_organization_service),
         permission_service: PermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     try:
@@ -168,7 +193,7 @@ async def get_organization_detail_info_by_id(
 async def create_organization(
         user: User = Depends(get_user),
         org_create_in_request_schema: OrganizationCreateInRequest = Body(...),
-        organization_service: OrganizationService = Depends(get_organization_service),
+        organization_service: IOrganizationService = Depends(get_organization_service),
 ) -> JSONResponse:
     try:
         org: Organization = (
@@ -187,7 +212,7 @@ async def create_organization(
 async def patch_organization(
         org_patch_form: OrganizationInPatch,
         user: User = Depends(get_user),
-        organization_service: OrganizationService = Depends(get_organization_service),
+        organization_service: IOrganizationService = Depends(get_organization_service),
         permission_service: PermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     flag: bool = (
@@ -219,7 +244,7 @@ async def patch_organization(
 async def get_organization_projects_short_info(
         org_id: int = Query(),
         user: User = Depends(get_user),
-        organization_service: OrganizationService = Depends(get_organization_service),
+        organization_service: IOrganizationService = Depends(get_organization_service),
         project_service: ProjectService = Depends(get_project_service),
         permission_service: PermissionService = Depends(get_permission_service),
 ) -> JSONResponse:

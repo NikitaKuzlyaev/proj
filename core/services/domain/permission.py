@@ -9,6 +9,7 @@ from core.repository.crud.permission import PermissionCRUDRepository
 from core.repository.crud.project import ProjectCRUDRepository
 from core.repository.crud.user import UserCRUDRepository
 from core.repository.crud.vacancy import VacancyCRUDRepository
+from core.schemas.admin import AdminPermissionSignature
 from core.schemas.permission import PermissionsShortResponse
 from core.services.mappers.permission import get_permission_mapper, PermissionMapper
 from core.utilities.exceptions.database import EntityDoesNotExist
@@ -33,11 +34,41 @@ class PermissionService:
         self.vacancy_repo = vacancy_repo
         self.project_repo = project_repo
 
+    async def user_admin_permission(
+            self,
+            user_id: int,
+    ) -> AdminPermissionSignature:
+        permission: Permission | None = (
+            await self.permission_repo.user_admin_permission(
+                user_id=user_id,
+            )
+        )
+        if not permission:
+            result = AdminPermissionSignature(
+                permission_id=None,
+                sign=False,
+            )
+        else:
+            result = AdminPermissionSignature(
+                permission_id=permission.id,
+                sign=True,
+            )
+
+        return result
+
     async def can_user_edit_organization(
             self,
             org_id: int,
             user_id: int,
     ) -> bool:
+        # user: User | None = await self.user_repo.get_user_by_id(user_id=user_id)
+        # if not user:
+        #     raise EntityDoesNotExist('User not found')
+        #
+        # org: Organization | None = await self.user_repo.get_user_by_id(user_id=user_id)
+        # if not user:
+        #     raise EntityDoesNotExist('User not found')
+
         flag: bool = (
             await self.permission_repo.can_user_edit_organization(
                 user_id=user_id,
@@ -53,6 +84,10 @@ class PermissionService:
             permission_type: str,
             resource_id: int,
     ) -> bool:
+        user: User | None = await self.user_repo.get_user_by_id(user_id=user_id)
+        if not user:
+            raise EntityDoesNotExist('User not found')
+
         permission: Permission | None = (
             await self.permission_repo.search_exist_permission(
                 user_id=user_id,

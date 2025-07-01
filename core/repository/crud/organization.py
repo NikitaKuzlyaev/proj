@@ -67,6 +67,7 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
         Получить все существующие объекты Organization (Дебаг. Не рекомендуется использовать)
         :return: последовательность объектов Organization
         """
+        print('async def get_all_organizations', '\n' * 10)
         result = await self.async_session.execute(
             select(
                 Organization

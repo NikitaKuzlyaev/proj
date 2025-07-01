@@ -16,6 +16,7 @@ class ProjectMapper:
             project: Project,
             manager: User,
     ) -> ProjectFullInfoResponse:
+
         res = ProjectFullInfoResponse(
             org_id=project.organization_id,
             name=project.name,

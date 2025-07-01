@@ -14,19 +14,21 @@ class PermissionType(enum.Enum):
     CREATE_PROJECTS_INSIDE_ORGANIZATION = "CREATE_PROJECTS_INSIDE_ORGANIZATION"
     EDIT_VACANCY = "EDIT_VACANCY"
     EDIT_PROJECT = "EDIT_PROJECT"
+    ADMIN = "ADMIN"
 
 
 class ResourceType(enum.Enum):
     ORGANIZATION = "ORGANIZATION"
     PROJECT = "PROJECT"
     VACANCY = "VACANCY"
+    DOMAIN = "DOMAIN"
 
 
 class Permission(Base):
     __tablename__ = "permission"
 
     id: Mapped[int] = mapped_column(
-        primary_key=True
+        primary_key=True,
     )
 
     user_id: Mapped[int] = mapped_column(

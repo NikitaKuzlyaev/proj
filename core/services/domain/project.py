@@ -56,7 +56,7 @@ class ProjectService:
         :param project_id: id объекта Project
         :return: объект Project с указанным id
         """
-        project: Project | None = await self.get_project_by_id(project_id=project_id)
+        project: Project | None = await self.project_repo.get_project_by_id(project_id=project_id)
         if not project:
             raise EntityDoesNotExist('Project not found')
         return project
@@ -66,8 +66,7 @@ class ProjectService:
             user_id: int,
             project_id: int,
     ) -> ProjectFullInfoResponse:
-
-        project: Project  = await self.get_project_by_id(project_id=project_id)
+        project: Project = await self.get_project_by_id(project_id=project_id)
         user: User = await self.user_service.get_user_by_id(user_id=user_id)
 
         res: ProjectFullInfoResponse = (

@@ -6,9 +6,12 @@ from starlette.responses import JSONResponse
 from core.dependencies.authorization import get_user
 from core.models import User, Organization, Project
 from core.schemas.permission import PermissionsResponse
-from core.services.domain.organization import OrganizationService, get_organization_service
+from core.services.domain.organization import OrganizationService
 from core.services.domain.permission import PermissionService, get_permission_service
 from core.services.domain.project import get_project_service, ProjectService
+from core.services.interfaces.organization import IOrganizationService
+#from core.services.providers.organization import get_organization_service
+from core.services.providers.provider import get_organization_service
 
 router = fastapi.APIRouter(prefix="/permissions", tags=["permissions"])
 
@@ -19,7 +22,7 @@ ALL_FIELDS = PermissionsResponse.model_fields.keys()
 async def can_user_create_projects_inside_organization(
         org_id: int = Query(),
         user: User = Depends(get_user),
-        organization_service: OrganizationService = Depends(get_organization_service),
+        organization_service: IOrganizationService = Depends(get_organization_service),
         permission_service: PermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     try:

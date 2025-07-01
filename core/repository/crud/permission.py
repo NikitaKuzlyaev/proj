@@ -114,6 +114,29 @@ class PermissionCRUDRepository(BaseCRUDRepository):
         )
         return permission
 
+
+    async def user_admin_permission(
+            self,
+            user_id: int,
+    ) -> Permission | None:
+        """
+        Узнать имеет ли User admin-permission
+        :param user_id: id объекта User
+        :return: True / False
+        """
+        result = await self.async_session.execute(
+            select(
+                Permission
+            ).where(
+                Permission.user_id == user_id,
+                Permission.resource_id == user_id,
+                Permission.resource_type == ResourceType.DOMAIN.value,
+                Permission.permission_type == PermissionType.ADMIN.value,
+            )
+        )
+        return result.scalar_one_or_none()
+
+
     async def can_user_edit_organization(
             self,
             user_id: int,

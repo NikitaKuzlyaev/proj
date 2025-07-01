@@ -95,7 +95,7 @@ class UserCRUDRepository(BaseCRUDRepository):
             )
         )
         res = await self.async_session.execute(stmt)
-        return res.one_or_none()
+        return res.scalars().one_or_none()
 
     # Debug!!!!
     async def get_all_users(
@@ -113,4 +113,6 @@ class UserCRUDRepository(BaseCRUDRepository):
         return users
 
 
-account_repo = get_repository(repo_type=UserCRUDRepository)
+user_repo = get_repository(
+    repo_type=UserCRUDRepository
+)
