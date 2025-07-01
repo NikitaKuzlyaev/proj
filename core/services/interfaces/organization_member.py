@@ -1,6 +1,7 @@
 from typing import Protocol
 
 from core.models.organizationMember import OrganizationMember
+from core.schemas.organization import OrganizationJoinResponse
 
 
 class IOrganizationMemberService(Protocol):
@@ -16,6 +17,7 @@ class IOrganizationMemberService(Protocol):
             self,
             user_id: int,
             org_id: int,
+            raise_if_fail: bool = True,
     ) -> OrganizationMember:
         ...
 
@@ -23,4 +25,11 @@ class IOrganizationMemberService(Protocol):
             self,
             org_member_id: int,
     ) -> OrganizationMember:
+        ...
+
+    async def join_organization(
+            self,
+            user_id: int,
+            org_id: int,
+    ) -> OrganizationJoinResponse:
         ...

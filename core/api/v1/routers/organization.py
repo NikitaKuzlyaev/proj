@@ -13,32 +13,36 @@ from core.schemas.organization import OrganizationCreateInRequest, OrganizationR
     OrganizationDetailInfoResponse, OrganizationInPatch, SequenceAllOrganizationsShortInfoResponse, \
     OrganizationShortInfoResponse, OrganizationInfoForEditResponse, OrganizationVisibilityType, \
     OrganizationJoinPolicyType, OrganizationActivityStatusType, OrganizationProjectsShortInfoResponse, \
-    OrganizationJoinResponse
+    OrganizationJoinResponse, OrganizationJoinRequest
 from core.schemas.project import ProjectManagerInfo
+from core.services.interfaces.organization_member import IOrganizationMemberService
 #from core.services.domain.organization import get_organization_service, OrganizationService
 from core.services.providers.organization import get_organization_service
 #from core.services.providers.provider import get_organization_service
 from core.services.interfaces.organization import IOrganizationService
 from core.services.domain.permission import PermissionService, get_permission_service
 from core.services.domain.project import ProjectService, get_project_service
+from core.services.providers.organization_member import get_organization_member_service
 
 router = fastapi.APIRouter(prefix="/org", tags=["organization"])
 
 
 @router.post("/join", response_class=JSONResponse)
 async def join_organization(
-        org_id: int = Body(...,),
+        org_join_request: OrganizationJoinRequest = Body(...),
         user: User = Depends(get_user),
-        organization_service: IOrganizationService = Depends(get_organization_service),
+        org_member_service: IOrganizationMemberService = Depends(get_organization_member_service),
 ) -> JSONResponse:
+    print("@router.post(join", org_join_request, '\n'*10)
     try:
         result: OrganizationJoinResponse = (
-            await organization_service.join_organization(
+            await org_member_service.join_organization(
                 user_id=user.id,
-                org_id=org_id,
+                org_id=org_join_request.org_id,
             )
         )
-        result.model_dump()
+        result = result.model_dump()
+        print(result, type(result), '\n'*10)
         return JSONResponse({'body': result})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

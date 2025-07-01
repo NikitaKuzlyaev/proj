@@ -15,7 +15,7 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
             org_id: int,
             user_id: int,
     ) -> OrganizationMember | None:
-
+        print('repo: get_organization_member_by_user_and_org >> ', '\n' * 10)
         result = await self.async_session.execute(
             select(
                 OrganizationMember

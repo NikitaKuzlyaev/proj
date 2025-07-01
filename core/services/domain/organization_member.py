@@ -7,18 +7,15 @@ from core.models.user import User
 from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
 from core.repository.crud.permission import PermissionCRUDRepository
-#from core.services.domain.organization import get_organization_service
-#from core.services.providers.organization import get_organization_service
+from core.schemas.organization import OrganizationJoinResponse, OrganizationJoinPolicyType
+# from core.services.domain.organization import get_organization_service
+# from core.services.providers.organization import get_organization_service
 from core.services.domain.user import UserService, get_user_service
 from core.services.interfaces.organization import IOrganizationService
 from core.services.interfaces.organization_member import IOrganizationMemberService
-from core.utilities.exceptions.database import EntityDoesNotExist
+from core.utilities.exceptions.database import EntityDoesNotExist, EntityAlreadyExists
+from core.utilities.exceptions.permission import PermissionDenied
 
-
-from typing import Protocol
-
-# class IOrganizationService(Protocol):
-#     async def get_organization_by_id(self, org_id: int) -> Organization: ...
 
 class OrganizationMemberService(IOrganizationMemberService):
     def __init__(
@@ -34,6 +31,39 @@ class OrganizationMemberService(IOrganizationMemberService):
         self.permission_repo = permission_repo
         self.user_service = user_service
         self.org_service = org_service
+
+    async def join_organization(
+            self,
+            user_id: int,
+            org_id: int,
+            code: int | None = None,
+    ) -> OrganizationJoinResponse:
+
+        try:
+            organization: Organization = await self.org_service.get_organization_by_id(org_id=org_id)
+            user: User = await self.user_service.get_user_by_id(user_id=user_id)
+
+            org_member: OrganizationMember | None = (
+                await self.get_organization_member_by_user_and_org(user_id=user_id, org_id=org_id, raise_if_fail=False)
+            )
+            if org_member:
+                raise EntityAlreadyExists('Пользователь уже в организации')
+
+            if organization.join_policy == OrganizationJoinPolicyType.CLOSED.value:
+                raise PermissionDenied('Организация закрыта')
+            elif organization.join_policy == OrganizationJoinPolicyType.CODE.value:
+                # заглушка
+                if code is None:
+                    raise PermissionDenied('Код вступления неверный')
+
+            org_member: OrganizationMember = await self.create_org_member(
+                user_id=user_id,
+                org_id=org_id,
+            )
+            res = OrganizationJoinResponse(member_id=org_member.id)
+            return res
+        except Exception as e:
+            raise e
 
     async def create_org_member(
             self,
@@ -55,7 +85,9 @@ class OrganizationMemberService(IOrganizationMemberService):
             self,
             user_id: int,
             org_id: int,
+            raise_if_fail: bool = True
     ) -> OrganizationMember:
+        print('get_organization_member_by_user_and_org >>>', '\n' * 10)
 
         organization: Organization = await self.org_service.get_organization_by_id(org_id=org_id)
         user: User = await self.user_service.get_user_by_id(user_id=user_id)
@@ -66,9 +98,9 @@ class OrganizationMemberService(IOrganizationMemberService):
                 user_id=user_id,
             )
         )
-        if not org_member:
+        if raise_if_fail and org_member:
             raise EntityDoesNotExist
-
+        print('get_organization_member_by_user_and_org <<<', '\n' * 10)
         return org_member
 
     async def get_organization_member_by_id(
@@ -85,8 +117,6 @@ class OrganizationMemberService(IOrganizationMemberService):
             raise EntityDoesNotExist
 
         return org_member
-
-
 
 #
 # def get_organization_member_service(

@@ -18,6 +18,10 @@ class OrganizationInCreate(BaseSchemaModel):
     creator_id: int
 
 
+class OrganizationJoinRequest(BaseSchemaModel):
+    org_id: int
+    code: Optional[str] = None
+
 class OrganizationInUpdate(BaseSchemaModel):
     ...
 
