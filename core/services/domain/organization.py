@@ -27,49 +27,48 @@ class OrganizationService(IOrganizationService):
             org_repo: OrganizationCRUDRepository,
             member_repo: OrganizationMemberCRUDRepository,
             permission_repo: PermissionCRUDRepository,
-            # user_service: UserService,
-            org_member_service: IOrganizationMemberService,
+            user_service: UserService,
+            #org_member_service: IOrganizationMemberService,
     ):
-        ...
         self.org_repo = org_repo
         self.member_repo = member_repo
         self.permission_repo = permission_repo
-        # self.user_service = user_service
-        self.org_member_service=org_member_service
+        self.user_service = user_service
+        #self.org_member_service=org_member_service
 
-    async def join_organization(
-            self,
-            user_id: int,
-            org_id: int,
-            code: int | None = None,
-            user_service: UserService = Depends(get_user_service),
-            #org_member_service: IOrganizationMemberService = Depends(get_organization_member_service)
-    ) -> OrganizationJoinResponse:
-        organization: Organization = await self.get_organization_by_id(org_id=org_id)
-        user: User = await user_service.get_user_by_id(user_id=user_id)
-
-        org_member: OrganizationMember | None = (
-            await self.org_member_service.get_organization_member_by_user_and_org(
-                user_id=user_id,
-                org_id=org_id,
-            )
-        )
-        if org_member:
-            raise EntityAlreadyExists('Пользователь уже в организации')
-
-        if organization.join_policy == OrganizationJoinPolicyType.CLOSED.value:
-            raise PermissionDenied('Организация закрыта')
-        elif organization.join_policy == OrganizationJoinPolicyType.CODE.value:
-            # заглушка
-            if code is None:
-                raise PermissionDenied('Код вступления неверный')
-
-        org_member: OrganizationMember = await org_member_service.create_org_member(
-            user_id=user_id,
-            org_id=org_id,
-        )
-        res = OrganizationJoinResponse(member_id=org_member.id)
-        return res
+    # async def join_organization(
+    #         self,
+    #         user_id: int,
+    #         org_id: int,
+    #         code: int | None = None,
+    #         user_service: UserService = Depends(get_user_service),
+    #         #org_member_service: IOrganizationMemberService = Depends(get_organization_member_service)
+    # ) -> OrganizationJoinResponse:
+    #     organization: Organization = await self.get_organization_by_id(org_id=org_id)
+    #     user: User = await user_service.get_user_by_id(user_id=user_id)
+    #
+    #     org_member: OrganizationMember | None = (
+    #         await self.org_member_service.get_organization_member_by_user_and_org(
+    #             user_id=user_id,
+    #             org_id=org_id,
+    #         )
+    #     )
+    #     if org_member:
+    #         raise EntityAlreadyExists('Пользователь уже в организации')
+    #
+    #     if organization.join_policy == OrganizationJoinPolicyType.CLOSED.value:
+    #         raise PermissionDenied('Организация закрыта')
+    #     elif organization.join_policy == OrganizationJoinPolicyType.CODE.value:
+    #         # заглушка
+    #         if code is None:
+    #             raise PermissionDenied('Код вступления неверный')
+    #
+    #     org_member: OrganizationMember = await org_member_service.create_org_member(
+    #         user_id=user_id,
+    #         org_id=org_id,
+    #     )
+    #     res = OrganizationJoinResponse(member_id=org_member.id)
+    #     return res
 
     async def get_all_organizations(
             self,
