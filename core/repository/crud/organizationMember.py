@@ -132,8 +132,8 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
         result: Sequence[OrganizationMemberDetailInfo] = (
             [
                 OrganizationMemberDetailInfo(
-                    user_id=user.org_id,
-                    org_id=org.org_id,
+                    user_id=user.id,
+                    org_id=org.id,
                     user_name=user.username,
                     joined_at=org_member.created_at.isoformat(),
                 ) for org_member, user, org in tuples
