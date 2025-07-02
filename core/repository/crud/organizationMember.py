@@ -84,7 +84,7 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
     async def get_organization_members_by_org_id(
             self,
             org_id: int,
-    ) -> Sequence[OrganizationMember] | None:
+    ) -> Sequence[OrganizationMember]:
         """
         Получает объекты OrganizationMember с OrganizationMember.organization_id == org_id
         :param org_id: id объекта Organization
@@ -103,7 +103,7 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
     async def get_organization_members_detail_info_by_org_id(
             self,
             org_id: int,
-    ) -> Sequence[OrganizationMemberDetailInfo] | None:
+    ) -> Sequence[OrganizationMemberDetailInfo]:
 
         rows = await self.async_session.execute(
             select(
@@ -132,8 +132,8 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
         result: Sequence[OrganizationMemberDetailInfo] = (
             [
                 OrganizationMemberDetailInfo(
-                    user_id=user.id,
-                    org_id=org.id,
+                    user_id=user.org_id,
+                    org_id=org.org_id,
                     user_name=user.username,
                     joined_at=org_member.created_at.isoformat(),
                 ) for org_member, user, org in tuples
@@ -169,7 +169,7 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
     async def get_all_user_organization_memberships(
             self,
             user_id: int,
-    ) -> Sequence[OrganizationMember] | None:
+    ) -> Sequence[OrganizationMember]:
         """
         Получить все объекты OrganizationMember связанные по ключу с User c id равным user_id
         :param user_id: id объекта User

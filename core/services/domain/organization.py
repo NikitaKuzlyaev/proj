@@ -148,14 +148,14 @@ class OrganizationService(IOrganizationService):
             user_id: int,
             org_id: int,
     ) -> Sequence[OrganizationMember]:
-        try:
-            org_members: Sequence[OrganizationMember] = \
-                await self.member_repo.get_organization_members_by_org_id(
-                    org_id=org_id,
-                )
-            return org_members
-        except Exception as e:
-            raise e
+
+        org_members: Sequence[OrganizationMember] = (
+            await self.member_repo.get_organization_members_by_org_id(
+                org_id=org_id,
+            )
+        )
+        return org_members
+
 
     @log_calls
     async def patch_organization_by_id(
@@ -168,18 +168,16 @@ class OrganizationService(IOrganizationService):
             visibility: OrganizationVisibilityType,
             activity_status: OrganizationActivityStatusType,
             join_policy: OrganizationJoinPolicyType,
-    ) -> Organization:
-        try:
-            org: Organization = \
-                await self.org_repo.patch_organization_by_id(
-                    org_id=org_id,
-                    name=name,
-                    short_description=short_description,
-                    long_description=long_description,
-                    visibility=visibility.value,
-                    activity_status=activity_status.value,
-                    join_policy=join_policy.value,
-                )
-            return org
-        except Exception as e:
-            raise e
+    ) -> Organization | None:
+        org: Organization = (
+            await self.org_repo.patch_organization_by_id(
+                org_id=org_id,
+                name=name,
+                short_description=short_description,
+                long_description=long_description,
+                visibility=visibility.value,
+                activity_status=activity_status.value,
+                join_policy=join_policy.value,
+            )
+        )
+        return org

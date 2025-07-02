@@ -107,7 +107,7 @@ class IOrganizationService(Protocol):
             visibility: OrganizationVisibilityType,
             activity_status: OrganizationActivityStatusType,
             join_policy: OrganizationJoinPolicyType,
-    ) -> Organization:
+    ) -> Organization | None:
         """
         Обновление существующей организации от лица пользователя
 

@@ -6,8 +6,6 @@ from starlette.responses import JSONResponse
 from core.dependencies.authorization import get_user
 from core.models import User, Organization, Project
 from core.schemas.permission import PermissionsResponse
-from core.services.domain.permission import PermissionService
-from core.services.domain.project import ProjectService
 from core.services.interfaces.organization import IOrganizationService
 from core.services.interfaces.permission import IPermissionService
 from core.services.interfaces.project import IProjectService

@@ -10,6 +10,7 @@ from core.schemas.base import BaseSchemaModel
 class OrganizationJoinResponse(BaseSchemaModel):
     member_id: Optional[int]
 
+
 class OrganizationInCreate(BaseSchemaModel):
     name: str
     short_description: Optional[str] = None
@@ -20,6 +21,7 @@ class OrganizationInCreate(BaseSchemaModel):
 class OrganizationJoinRequest(BaseSchemaModel):
     org_id: int
     code: Optional[str] = None
+
 
 class OrganizationInUpdate(BaseSchemaModel):
     ...
@@ -46,8 +48,12 @@ class OrganizationInDelete(BaseSchemaModel):
     id: int
 
 
+class OrganizationMembersForAdminRequest(BaseSchemaModel):
+    org_id: int
+
+
 class OrganizationInPatch(BaseSchemaModel):
-    id: int
+    org_id: int
     name: str
     short_description: Optional[str] = None
     long_description: Optional[str] = None

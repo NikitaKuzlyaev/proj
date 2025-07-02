@@ -15,6 +15,7 @@ from core.services.interfaces.project import IProjectService
 from core.services.interfaces.user import IUserService
 from core.services.mappers.project import ProjectMapper
 from core.utilities.exceptions.database import EntityDoesNotExist
+from core.utilities.loggers.log_decorator import log_calls
 
 
 class ProjectService(IProjectService):
@@ -36,7 +37,7 @@ class ProjectService(IProjectService):
         self.project_mapper = project_mapper
         self.user_service = user_service
 
-
+    @log_calls
     async def get_projects_short_info_in_organization(
             self,
             user_id: int,
@@ -51,7 +52,7 @@ class ProjectService(IProjectService):
         )
         return res
 
-
+    @log_calls
     async def get_all_projects_in_organization_by_org_id(
             self,
             user_id: int,
@@ -64,6 +65,7 @@ class ProjectService(IProjectService):
         )
         return res
 
+    @log_calls
     async def get_project_by_id(
             self,
             project_id: int,
@@ -78,6 +80,7 @@ class ProjectService(IProjectService):
             raise EntityDoesNotExist('Project not found')
         return project
 
+    @log_calls
     async def get_project_full_info_response(
             self,
             user_id: int,
@@ -94,6 +97,7 @@ class ProjectService(IProjectService):
         )
         return res
 
+    @log_calls
     async def create_project(
             self,
             user_id: int,
@@ -131,6 +135,7 @@ class ProjectService(IProjectService):
         )
         return res
 
+    @log_calls
     async def patch_project(
             self,
             user_id: int,
@@ -162,6 +167,7 @@ class ProjectService(IProjectService):
 
         return res
 
+    @log_calls
     async def get_project_creator(
             self,
             project_id: int,
