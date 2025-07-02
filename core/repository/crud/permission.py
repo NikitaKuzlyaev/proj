@@ -3,10 +3,12 @@ from sqlalchemy import select
 from core.dependencies.repository import get_repository
 from core.models.permissions import Permission, PermissionType, ResourceType
 from core.repository.crud.base import BaseCRUDRepository
+from core.utilities.loggers.log_decorator import log_calls
 
 
 class PermissionCRUDRepository(BaseCRUDRepository):
 
+    @log_calls
     async def search_exist_permission(
             self,
             user_id: int,
@@ -35,6 +37,7 @@ class PermissionCRUDRepository(BaseCRUDRepository):
         permission = permission.scalar_one_or_none()
         return permission
 
+    @log_calls
     async def create_permission(
             self,
             user_id: int,
@@ -72,6 +75,7 @@ class PermissionCRUDRepository(BaseCRUDRepository):
         await self.async_session.refresh(instance=permission)
         return permission
 
+    @log_calls
     async def allow_user_edit_vacancy(
             self,
             user_id: int,
@@ -93,6 +97,7 @@ class PermissionCRUDRepository(BaseCRUDRepository):
         )
         return permission
 
+    @log_calls
     async def allow_user_edit_organization(
             self,
             user_id: int,
@@ -114,7 +119,7 @@ class PermissionCRUDRepository(BaseCRUDRepository):
         )
         return permission
 
-
+    @log_calls
     async def user_admin_permission(
             self,
             user_id: int,
@@ -136,7 +141,7 @@ class PermissionCRUDRepository(BaseCRUDRepository):
         )
         return result.scalar_one_or_none()
 
-
+    @log_calls
     async def can_user_edit_organization(
             self,
             user_id: int,
@@ -160,6 +165,7 @@ class PermissionCRUDRepository(BaseCRUDRepository):
         )
         return bool(result.scalar_one_or_none())
 
+    @log_calls
     async def can_user_create_projects_inside_organization(
             self,
             user_id: int,
@@ -183,6 +189,7 @@ class PermissionCRUDRepository(BaseCRUDRepository):
         )
         return bool(result.scalar_one_or_none())
 
+    @log_calls
     async def can_user_edit_project(
             self,
             user_id: int,

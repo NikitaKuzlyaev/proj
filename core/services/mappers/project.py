@@ -3,6 +3,7 @@ from core.models import Project
 from core.models.user import User
 from core.schemas.project import ProjectFullInfoResponse, ProjectManagerInfo, ProjectVisibilityType, \
     ProjectActivityStatusType, CreatedProjectResponse, PatchedProjectResponse
+from core.utilities.loggers.log_decorator import log_calls
 
 
 class ProjectMapper:
@@ -11,6 +12,7 @@ class ProjectMapper:
     ):
         return
 
+    @log_calls
     def get_project_full_info_response(
             self,
             project: Project,
@@ -35,6 +37,7 @@ class ProjectMapper:
         )
         return res
 
+    @log_calls
     def get_created_project_response(
             self,
             project: Project,
@@ -44,6 +47,7 @@ class ProjectMapper:
         )
         return res
 
+    @log_calls
     def get_patched_project_response(
             self,
             project: Project,

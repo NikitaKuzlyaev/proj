@@ -7,6 +7,7 @@ from core.schemas.admin import AdminPermissionSignature
 from core.services.interfaces.permission import IPermissionService
 from core.services.interfaces.user import IUserService
 from core.services.mappers.project import ProjectMapper
+from core.utilities.loggers.log_decorator import log_calls
 
 
 class AdminService:
@@ -30,6 +31,7 @@ class AdminService:
         self.user_service = user_service
         self.permission_service = permission_service
 
+    @log_calls
     async def base_admin_check(
             self,
             user_id: int,

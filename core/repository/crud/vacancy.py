@@ -10,10 +10,11 @@ from core.models.vacancy import Vacancy
 from core.repository.crud.base import BaseCRUDRepository
 from core.schemas.project import ProjectManagerInfo, ProjectOfVacancyInfo, ProjectVacanciesShortInfoResponse
 from core.schemas.vacancy import VacancyActivityStatusType, VacancyVisibilityType
+from core.utilities.loggers.log_decorator import log_calls
 
 
 class VacancyCRUDRepository(BaseCRUDRepository):
-
+    @log_calls
     async def get_all_vacancies_in_project(
             self,
             project_id: int,
@@ -33,6 +34,7 @@ class VacancyCRUDRepository(BaseCRUDRepository):
         vacancies = result.scalars().all()
         return vacancies
 
+    @log_calls
     async def get_all_vacancies_in_project_detailed_info(
             self,
             project_id: int,
@@ -110,6 +112,7 @@ class VacancyCRUDRepository(BaseCRUDRepository):
 
         return result
 
+    @log_calls
     async def get_vacancy_by_id(
             self,
             vacancy_id: int,
@@ -129,6 +132,7 @@ class VacancyCRUDRepository(BaseCRUDRepository):
         vacancy = result.scalars().one_or_none()
         return vacancy
 
+    @log_calls
     async def patch_vacancy_by_id(
             self,
             vacancy_id: int,
@@ -159,6 +163,7 @@ class VacancyCRUDRepository(BaseCRUDRepository):
         )
         return result.scalar_one_or_none()
 
+    @log_calls
     async def create_vacancy(
             self,
             project_id: int,

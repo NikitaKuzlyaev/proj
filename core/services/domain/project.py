@@ -9,7 +9,8 @@ from core.repository.crud.organizationMember import OrganizationMemberCRUDReposi
 from core.repository.crud.permission import PermissionCRUDRepository
 from core.repository.crud.project import ProjectCRUDRepository
 from core.repository.crud.user import UserCRUDRepository
-from core.schemas.project import ProjectFullInfoResponse, CreatedProjectResponse, PatchedProjectResponse
+from core.schemas.project import ProjectFullInfoResponse, CreatedProjectResponse, PatchedProjectResponse, \
+    ProjectsInOrganizationShortInfoResponse
 from core.services.interfaces.project import IProjectService
 from core.services.interfaces.user import IUserService
 from core.services.mappers.project import ProjectMapper
@@ -34,6 +35,22 @@ class ProjectService(IProjectService):
         self.user_repo = user_repo
         self.project_mapper = project_mapper
         self.user_service = user_service
+
+
+    async def get_projects_short_info_in_organization(
+            self,
+            user_id: int,
+            org_id:int,
+    ) -> Sequence[ProjectsInOrganizationShortInfoResponse]:
+
+        res: Sequence[ProjectsInOrganizationShortInfoResponse] = (
+            await self.project_repo.get_projects_short_info_in_organization(
+                user_id=user_id,
+                org_id=org_id,
+            )
+        )
+        return res
+
 
     async def get_all_projects_in_organization_by_org_id(
             self,

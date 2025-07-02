@@ -6,6 +6,13 @@ from core.schemas.permission import PermissionsShortResponse
 
 class IPermissionService(Protocol):
 
+    async def can_user_see_organization_detail(
+            self,
+            user_id: int,
+            org_id: int,
+    ) -> bool:
+        ...
+
     async def user_admin_permission(
             self,
             user_id: int,

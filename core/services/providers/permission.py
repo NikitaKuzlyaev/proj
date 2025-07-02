@@ -8,8 +8,10 @@ from core.repository.crud.project import ProjectCRUDRepository
 from core.repository.crud.user import UserCRUDRepository
 from core.repository.crud.vacancy import VacancyCRUDRepository
 from core.services.domain.permission import PermissionService
+from core.services.interfaces.organization import IOrganizationService
 from core.services.interfaces.permission import IPermissionService
 from core.services.mappers.permission import PermissionMapper, get_permission_mapper
+from core.services.providers.organization import get_organization_service
 
 
 def get_permission_service(
@@ -20,6 +22,7 @@ def get_permission_service(
         user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
         vacancy_repo: VacancyCRUDRepository = Depends(get_repository(VacancyCRUDRepository)),
         project_repo: ProjectCRUDRepository = Depends(get_repository(ProjectCRUDRepository)),
+        org_service: IOrganizationService = Depends(get_organization_service),
 ) -> IPermissionService:
     return PermissionService(
         org_repo=org_repo,
@@ -29,4 +32,5 @@ def get_permission_service(
         user_repo=user_repo,
         vacancy_repo=vacancy_repo,
         project_repo=project_repo,
+        org_service=org_service,
     )

@@ -1,3 +1,5 @@
+from typing import Sequence, cast
+
 from core.models import Organization
 from core.models.organizationMember import OrganizationMember
 from core.models.user import User
@@ -5,6 +7,8 @@ from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
 from core.repository.crud.permission import PermissionCRUDRepository
 from core.schemas.organization import OrganizationJoinResponse, OrganizationJoinPolicyType
+from core.schemas.organization_member import OrganizationMemberForAdminResponse, OrganizationMemberDetailInfo, \
+    OrganizationMemberDeleteResponse
 
 from core.services.interfaces.organization import IOrganizationService
 from core.services.interfaces.organization_member import IOrganizationMemberService
@@ -30,6 +34,62 @@ class OrganizationMemberService(IOrganizationMemberService):
         self.org_service = org_service
 
     @log_calls
+    async def delete_organization_member(
+            self,
+            user_id: int,
+            org_id: int,
+    ) -> OrganizationMemberDeleteResponse:
+        ...
+        member: OrganizationMember = (
+            await self.member_repo.get_organization_member_by_user_and_org(
+                org_id=org_id,
+                user_id=user_id,
+            )
+        )
+        if not member:
+            res = OrganizationMemberDeleteResponse(
+                success=False,
+                message="Entity not found",
+            )
+            return res
+        else:
+            #await self.member_repo.delete_member_by_id(member_id=member.id)
+            await self.org_repo.delete_user_from_organization(member=member)
+            res = OrganizationMemberDeleteResponse(
+                success=True,
+                message="",
+            )
+            return res
+
+
+    @log_calls
+    async def get_organization_members_for_admin(
+            self,
+            user_id: int,
+            org_id: int,
+    ) -> Sequence[OrganizationMemberDetailInfo]:
+        try:
+            res: Sequence[OrganizationMemberDetailInfo] = (
+                await self.member_repo.get_organization_members_detail_info_by_org_id(
+                    org_id=org_id,
+                )
+            )
+            return res
+
+        except Exception as e:
+            raise e
+
+    @log_calls
+    async def get_organization_members_by_org_id(
+            self,
+            org_id: int,
+    ) -> Sequence[OrganizationMember] | None:
+        org_members: Sequence[OrganizationMember] | None = (
+            await self.member_repo.get_organization_members_by_org_id(org_id=org_id)
+        )
+        return org_members
+
+    @log_calls
     async def join_organization(
             self,
             user_id: int,
@@ -39,7 +99,7 @@ class OrganizationMemberService(IOrganizationMemberService):
 
         try:
             organization: Organization = (
-                await self.org_service.get_organization_by_id(org_id=org_id, user_id=user_id, )
+                await self.org_service.get_organization_by_id(org_id=org_id,)
             )
             user: User = await self.user_service.get_user_by_id(user_id=user_id)
 
@@ -71,7 +131,7 @@ class OrganizationMemberService(IOrganizationMemberService):
             user_id: int,
             org_id: int,
     ) -> OrganizationMember:
-        organization: Organization = await self.org_service.get_organization_by_id(org_id=org_id, user_id=user_id, )
+        organization: Organization = await self.org_service.get_organization_by_id(org_id=org_id,)
         user: User = await self.user_service.get_user_by_id(user_id=user_id)
 
         org_member: OrganizationMember = (
@@ -89,7 +149,7 @@ class OrganizationMemberService(IOrganizationMemberService):
             org_id: int,
             raise_if_fail: bool = True
     ) -> OrganizationMember:
-        organization: Organization = await self.org_service.get_organization_by_id(org_id=org_id, user_id=user_id, )
+        organization: Organization = await self.org_service.get_organization_by_id(org_id=org_id,)
         user: User = await self.user_service.get_user_by_id(user_id=user_id)
 
         org_member: OrganizationMember | None = (

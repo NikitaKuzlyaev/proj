@@ -27,6 +27,21 @@ class OrganizationService(IOrganizationService):
         self.permission_repo = permission_repo
         self.user_service = user_service
 
+    def is_org_open_to_view(
+            self,
+            org: Organization,
+    ) -> bool:
+        if not org:
+            return False
+
+        if org.join_policy != OrganizationJoinPolicyType.OPEN.value:
+            return False
+
+        if org.visibility != OrganizationVisibilityType.OPEN.value:
+            return False
+
+        return True
+
     @log_calls
     async def get_all_organizations(
             self,
@@ -79,9 +94,9 @@ class OrganizationService(IOrganizationService):
     @log_calls
     async def get_organization_by_id(
             self,
-            user_id: int,
             org_id: int,
-    ) -> Organization:
+            raise_on_failure: bool = True,
+    ) -> Organization | None:
 
         org: Organization | None = (
             await self.org_repo.get_organization_by_id(
@@ -89,7 +104,9 @@ class OrganizationService(IOrganizationService):
             )
         )
         if not org:
-            raise EntityDoesNotExist
+            if raise_on_failure:
+                raise EntityDoesNotExist
+            return None
 
         return org
 

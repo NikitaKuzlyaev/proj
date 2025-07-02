@@ -2,10 +2,18 @@ from typing import Sequence, Protocol
 
 from core.models import Project
 from core.models.user import User
-from core.schemas.project import ProjectFullInfoResponse, CreatedProjectResponse, PatchedProjectResponse
+from core.schemas.project import ProjectFullInfoResponse, CreatedProjectResponse, PatchedProjectResponse, \
+    ProjectsInOrganizationShortInfoResponse
 
 
 class IProjectService(Protocol):
+
+    async def get_projects_short_info_in_organization(
+            self,
+            user_id: int,
+            org_id:int,
+    ) -> Sequence[ProjectsInOrganizationShortInfoResponse]:
+        ...
 
     async def get_all_projects_in_organization_by_org_id(
             self,

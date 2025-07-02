@@ -22,7 +22,7 @@ class Vacancy(Base):
     name: Mapped[str] = mapped_column(
         String(length=64),
         nullable=False,
-        unique=True
+        unique=False
     )
 
     creator_id: Mapped[int] = mapped_column(

@@ -5,7 +5,6 @@ from typing import Sequence, Optional
 from pydantic import field_validator, Field
 
 from core.schemas.base import BaseSchemaModel
-from core.schemas.project import ProjectManagerInfo
 
 
 class OrganizationJoinResponse(BaseSchemaModel):
@@ -55,16 +54,6 @@ class OrganizationInPatch(BaseSchemaModel):
     visibility: OrganizationVisibilityType
     activity_status: OrganizationActivityStatusType
     join_policy: OrganizationJoinPolicyType
-
-
-class OrganizationProjectsShortInfoResponse(BaseSchemaModel):
-    id: int
-    name: str
-    short_description: Optional[str] = None
-    manager: ProjectManagerInfo
-    open_vacancies: Optional[int] = Field(default=0)
-    team_current_size: Optional[int] = Field(default=0)
-    team_full_size: Optional[int] = Field(default=0)
 
 
 class OrganizationCreateInRequest(BaseSchemaModel):
@@ -127,7 +116,7 @@ class OrganizationDetailInfoResponse(BaseSchemaModel):
     created_at: str
     creator_id: int
     number_of_members: int
-    allow_user_edit: bool = Field(default=True)
+    allow_user_edit: bool = Field(default=False)
     allow_user_delete: Optional[bool] = Field(default=False)
 
     @field_validator("created_at", mode="before")

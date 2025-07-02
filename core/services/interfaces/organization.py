@@ -9,6 +9,12 @@ from core.schemas.organization import OrganizationShortInfoResponse, \
 
 class IOrganizationService(Protocol):
 
+    def is_org_open_to_view(
+            self,
+            org: Organization,
+    ) -> bool:
+        ...
+
     async def get_all_organizations(
             self,
     ) -> Sequence[Organization]:
@@ -38,15 +44,15 @@ class IOrganizationService(Protocol):
 
     async def get_organization_by_id(
             self,
-            user_id: int,
             org_id: int,
+            raise_on_failure: bool = True,
     ) -> Organization:
         """
         Получает объект организации по ее id
 
         Args:
-            user_id: id пользователя совершающего запрос
             org_id: id организации для получения ее объекта
+            raise_on_failure: прокидывать исключение при ошибке или возвращать None
 
         Returns:
             Organization: Объект Organization

@@ -3,7 +3,9 @@ from typing import Sequence
 from sqlalchemy import select, update, delete
 
 from core.dependencies.repository import get_repository
+from core.models import OrganizationMember, Permission
 from core.models.organization import Organization
+from core.models.permissions import ResourceType
 from core.repository.crud.base import BaseCRUDRepository
 from core.utilities.loggers.log_decorator import log_calls
 
@@ -60,6 +62,29 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
             )
         )
         return result.scalar_one_or_none()
+
+    @log_calls
+    async def delete_user_from_organization(
+            self,
+            member: OrganizationMember,
+    ) -> None:
+        await self.async_session.execute(
+            delete(
+                OrganizationMember
+            ).where(
+                OrganizationMember.id == member.id,
+            )
+        )
+        await self.async_session.execute(
+            delete(
+                Permission
+            ).where(
+                Permission.user_id == member.user_id,
+                Permission.resource_type == ResourceType.ORGANIZATION.value,
+                Permission.resource_id == member.organization_id,
+            )
+        )
+        await self.async_session.commit()
 
     @log_calls
     async def get_all_organizations(

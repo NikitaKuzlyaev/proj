@@ -1,5 +1,5 @@
 import fastapi
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Body
 from fastapi import Query
 from starlette.responses import JSONResponse
 
@@ -10,6 +10,7 @@ from core.services.domain.permission import PermissionService
 from core.services.domain.project import ProjectService
 from core.services.interfaces.organization import IOrganizationService
 from core.services.interfaces.permission import IPermissionService
+from core.services.interfaces.project import IProjectService
 from core.services.providers.organization import get_organization_service
 from core.services.providers.permission import get_permission_service
 from core.services.providers.project import get_project_service
@@ -29,7 +30,6 @@ async def can_user_create_projects_inside_organization(
     try:
         org: Organization = (
             await organization_service.get_organization_by_id(
-                user_id=user.id,
                 org_id=org_id,
             )
         )
@@ -45,15 +45,15 @@ async def can_user_create_projects_inside_organization(
         return JSONResponse({'body': flag})
 
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/is-user-allowed-to-edit-project", response_model=bool)
 async def can_user_edit_project(
         project_id: int = Query(),
         user: User = Depends(get_user),
-        project_service: ProjectService = Depends(get_project_service),
-        permission_service: PermissionService = Depends(get_permission_service),
+        project_service: IProjectService = Depends(get_project_service),
+        permission_service: IPermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     try:
         project: Project = (
@@ -73,4 +73,27 @@ async def can_user_edit_project(
         return JSONResponse({'body': flag})
 
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/is-user-allowed-to-edit-organization")
+async def can_user_edit_organization(
+        params: dict = Body(...),
+        user: User = Depends(get_user),
+        permission_service: IPermissionService = Depends(get_permission_service),
+) -> JSONResponse:
+
+    org_id = params.get("org_id")
+    if not org_id:
+        raise HTTPException(status_code=400, detail="Missing required parameter 'org_id'")
+
+    try:
+        result: bool = (
+            await permission_service.can_user_edit_organization(
+                user_id=user.id,
+                org_id=org_id,
+            )
+        )
+        return JSONResponse({'body': result})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

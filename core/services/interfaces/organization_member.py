@@ -1,10 +1,26 @@
-from typing import Protocol
+from typing import Protocol, Sequence
 
 from core.models.organizationMember import OrganizationMember
 from core.schemas.organization import OrganizationJoinResponse
+from core.schemas.organization_member import OrganizationMemberForAdminResponse, OrganizationMemberDetailInfo, \
+    OrganizationMemberDeleteResponse
 
 
 class IOrganizationMemberService(Protocol):
+
+    async def delete_organization_member(
+            self,
+            user_id: int,
+            org_id: int,
+    ) -> OrganizationMemberDeleteResponse:
+        ...
+
+    async def get_organization_members_for_admin(
+            self,
+            user_id: int,
+            org_id: int,
+    ) -> Sequence[OrganizationMemberDetailInfo]:
+        ...
 
     async def join_organization(
             self,

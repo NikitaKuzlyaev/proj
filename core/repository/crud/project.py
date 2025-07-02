@@ -1,15 +1,63 @@
 from typing import Sequence
 
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
 
 from core.dependencies.repository import get_repository
-from core.models import Project
+from core.models import Project, Organization, Vacancy
 from core.models.user import User
 from core.repository.crud.base import BaseCRUDRepository
+from core.schemas.project import ProjectsInOrganizationShortInfoResponse, ProjectManagerInfo
+from core.schemas.vacancy import VacancyActivityStatusType
+from core.utilities.loggers.log_decorator import log_calls
 
 
 class ProjectCRUDRepository(BaseCRUDRepository):
 
+    async def get_projects_short_info_in_organization(
+        self,
+        user_id: int,
+        org_id: int,
+    ) -> Sequence[ProjectsInOrganizationShortInfoResponse]:
+
+
+        stmt = (
+            select(
+                Project,
+                User,
+                func.count(Vacancy.id).filter(
+                    (Vacancy.activity_status == VacancyActivityStatusType.ACTIVE.value)
+                    & (Vacancy.project_id == Project.id)
+                ).label("open_vacancies")
+            )
+            .join(User, User.id == Project.creator_id)
+            .outerjoin(Vacancy, Vacancy.project_id == Project.id)
+            .where(Project.organization_id == org_id)
+            .group_by(Project.id, User.id)
+        )
+
+        result = await self.async_session.execute(stmt)
+        rows = result.all()
+
+        return [
+            ProjectsInOrganizationShortInfoResponse(
+                id=project.id,
+                name=project.name,
+                short_description=project.short_description,
+                manager=ProjectManagerInfo(
+                    user_id=user.id,
+                    avatar="",
+                    name=user.username,
+                ),
+                open_vacancies=open_vacancies,
+                team_current_size=0,
+                team_full_size=0,
+            )
+            for project, user, open_vacancies in rows
+        ]
+
+
+
+    @log_calls
     async def get_all_projects(
             self,
     ) -> Sequence[Project] | None:
@@ -25,6 +73,7 @@ class ProjectCRUDRepository(BaseCRUDRepository):
         projects = result.scalars().all()
         return projects
 
+    @log_calls
     async def get_all_projects_in_organization_by_org_id(
             self,
             org_id: int,
@@ -44,6 +93,7 @@ class ProjectCRUDRepository(BaseCRUDRepository):
         projects = result.scalars().all()
         return projects
 
+    @log_calls
     async def get_project_by_id(
             self,
             project_id: int,
@@ -63,6 +113,7 @@ class ProjectCRUDRepository(BaseCRUDRepository):
         project = result.scalars().one_or_none()
         return project
 
+    @log_calls
     async def get_project_creator(
             self,
             project_id: int,
@@ -83,6 +134,7 @@ class ProjectCRUDRepository(BaseCRUDRepository):
         user = result.scalars().one_or_none()
         return user
 
+    @log_calls
     async def patch_project_by_id(
             self,
             project_id: int,
@@ -134,6 +186,7 @@ class ProjectCRUDRepository(BaseCRUDRepository):
         )
         return result.scalar_one_or_none()
 
+    @log_calls
     async def create_project(
             self,
             user_id: int,

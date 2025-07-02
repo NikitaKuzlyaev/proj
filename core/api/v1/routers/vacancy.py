@@ -5,9 +5,12 @@ from starlette.responses import JSONResponse
 
 from core.dependencies.authorization import get_user
 from core.models import User
+from core.schemas.permission import PermissionsShortResponse
 from core.schemas.vacancy import VacancyCreateRequest, VacancyPatchRequest, VacancyShortInfoResponse, \
     VacancyCreateResponse, VacancyPatchResponse
+from core.services.interfaces.permission import IPermissionService
 from core.services.interfaces.vacancy import IVacancyService
+from core.services.providers.permission import get_permission_service
 from core.services.providers.vacancy import get_vacancy_service
 
 router = fastapi.APIRouter(prefix="/vacancy", tags=["vacancy"])
@@ -36,12 +39,19 @@ async def create_vacancy(
         vacancy_create_schema: VacancyCreateRequest = Body(...),
         user: User = Depends(get_user),
         vacancy_service: IVacancyService = Depends(get_vacancy_service),
+        permission_service: IPermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     try:
         vacancy_create_response: VacancyCreateResponse = (
             await vacancy_service.create_vacancy(
                 user_id=user.id,
                 **vacancy_create_schema.model_dump(),
+            )
+        )
+        permission: PermissionsShortResponse = (
+            await permission_service.allow_user_edit_vacancy(
+                user_id=user.id,
+                vacancy_id=vacancy_create_response.vacancy_id,
             )
         )
         vacancy_create_response = vacancy_create_response.model_dump()

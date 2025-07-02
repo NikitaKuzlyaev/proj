@@ -1,4 +1,4 @@
-from core.models import Permission, User, Vacancy, Organization, Project
+from core.models import Permission, User, Vacancy, Organization, Project, OrganizationMember
 from core.models.permissions import ResourceType, PermissionType
 from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
@@ -8,9 +8,12 @@ from core.repository.crud.user import UserCRUDRepository
 from core.repository.crud.vacancy import VacancyCRUDRepository
 from core.schemas.admin import AdminPermissionSignature
 from core.schemas.permission import PermissionsShortResponse
+from core.services.interfaces.organization import IOrganizationService
 from core.services.interfaces.permission import IPermissionService
 from core.services.mappers.permission import PermissionMapper
 from core.utilities.exceptions.database import EntityDoesNotExist
+from core.utilities.loggers.log_decorator import log_calls
+from core.utilities.methods.trusted_method import trusted_method
 
 
 class PermissionService(IPermissionService):
@@ -23,6 +26,7 @@ class PermissionService(IPermissionService):
             user_repo: UserCRUDRepository,
             vacancy_repo: VacancyCRUDRepository,
             project_repo: ProjectCRUDRepository,
+            org_service: IOrganizationService,
     ):
         self.org_repo = org_repo
         self.member_repo = member_repo
@@ -31,7 +35,10 @@ class PermissionService(IPermissionService):
         self.user_repo = user_repo
         self.vacancy_repo = vacancy_repo
         self.project_repo = project_repo
+        self.org_service = org_service
 
+    @trusted_method
+    @log_calls
     async def user_admin_permission(
             self,
             user_id: int,
@@ -54,20 +61,60 @@ class PermissionService(IPermissionService):
 
         return result
 
+    @trusted_method
+    @log_calls
+    async def can_user_see_organization_detail(
+            self,
+            user_id: int,
+            org_id: int,
+    ) -> bool:
+        res: Organization | None = (
+            await self.org_service.get_organization_by_id(
+                org_id=org_id,
+            )
+        )
+        if res and self.org_service.is_org_open_to_view(org=res):
+            return True
+
+        res: OrganizationMember | None = (
+            await self.member_repo.get_organization_member_by_user_and_org(
+                user_id=user_id,
+                org_id=org_id,
+            )
+        )
+        if res: return True
+
+        res: bool = (
+            await self.check_permission(
+                user_id=user_id,
+                resource_id=org_id,
+                resource_type=ResourceType.ORGANIZATION.value,
+                permission_type=PermissionType.EDIT_ORGANIZATION.value,
+            )
+        )
+        if res: return True
+
+        return False
+
+    @trusted_method
+    @log_calls
     async def can_user_edit_organization(
             self,
             org_id: int,
             user_id: int,
     ) -> bool:
-
-        flag: bool = (
-            await self.permission_repo.can_user_edit_organization(
+        res: bool = (
+            await self.check_permission(
                 user_id=user_id,
-                org_id=org_id,
+                resource_id=org_id,
+                resource_type=ResourceType.ORGANIZATION.value,
+                permission_type=PermissionType.EDIT_ORGANIZATION.value,
             )
         )
-        return flag
+        return res
 
+    @trusted_method
+    @log_calls
     async def check_permission(
             self,
             user_id: int,
@@ -75,10 +122,6 @@ class PermissionService(IPermissionService):
             permission_type: str,
             resource_id: int,
     ) -> bool:
-        user: User | None = await self.user_repo.get_user_by_id(user_id=user_id)
-        if not user:
-            raise EntityDoesNotExist('User not found')
-
         permission: Permission | None = (
             await self.permission_repo.search_exist_permission(
                 user_id=user_id,
@@ -90,6 +133,8 @@ class PermissionService(IPermissionService):
         res = permission is not None
         return res
 
+    @trusted_method
+    @log_calls
     async def can_user_edit_vacancy(
             self,
             user_id: int,
@@ -101,14 +146,6 @@ class PermissionService(IPermissionService):
         :param vacancy_id: id объекта Vacancy
         :return:
         """
-        user: User | None = await self.user_repo.get_user_by_id(user_id=user_id)
-        if not user:
-            raise EntityDoesNotExist('User not found')
-
-        vacancy: Vacancy | None = await self.vacancy_repo.get_vacancy_by_id(vacancy_id=vacancy_id)
-        if not vacancy:
-            raise EntityDoesNotExist('Vacancy not found')
-
         res: bool = (
             await self.check_permission(
                 user_id=user_id,
@@ -119,6 +156,8 @@ class PermissionService(IPermissionService):
         )
         return res
 
+    @trusted_method
+    @log_calls
     async def can_user_edit_project(
             self,
             user_id: int,
@@ -130,22 +169,18 @@ class PermissionService(IPermissionService):
         :param project_id: id объекта Project
         :return: True / False
         """
-        user: User | None = await self.user_repo.get_user_by_id(user_id=user_id)
-        if not user:
-            raise EntityDoesNotExist('User not found')
-
-        project: Project | None = await self.project_repo.get_project_by_id(project_id=project_id)
-        if not project:
-            raise EntityDoesNotExist('Project not found')
-
-        flag: bool = (
-            await self.permission_repo.can_user_edit_project(
+        res: bool = (
+            await self.check_permission(
                 user_id=user_id,
-                project_id=project_id,
+                resource_type=ResourceType.PROJECT.value,
+                permission_type=PermissionType.EDIT_PROJECT.value,
+                resource_id=project_id,
             )
         )
-        return flag
+        return res
 
+    @trusted_method
+    @log_calls
     async def can_user_create_projects_inside_organization(
             self,
             user_id: int,
@@ -157,22 +192,15 @@ class PermissionService(IPermissionService):
         :param org_id: id объекта Organization
         :return: True / False
         """
-        user: User | None = await self.user_repo.get_user_by_id(user_id=user_id)
-        if not user:
-            raise EntityDoesNotExist('User not found')
-
-        org: Organization | None = await self.org_repo.get_organization_by_id(org_id=org_id)
-        if not org:
-            raise EntityDoesNotExist('Organization not found')
-
-        flag: bool = (
+        res: bool = (
             await self.permission_repo.can_user_create_projects_inside_organization(
                 user_id=user_id,
                 org_id=org_id,
             )
         )
-        return flag
+        return res
 
+    @log_calls
     async def allow_user_edit_vacancy(
             self,
             user_id: int,
@@ -204,4 +232,3 @@ class PermissionService(IPermissionService):
             )
         )
         return res
-

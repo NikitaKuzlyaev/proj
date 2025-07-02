@@ -12,10 +12,11 @@ from core.schemas.permission import PermissionsShortResponse
 from core.schemas.project import ProjectVacanciesShortInfoResponse
 from core.schemas.vacancy import VacancyShortInfoResponse, VacancyCreateResponse, VacancyPatchResponse
 from core.services.interfaces.permission import IPermissionService
+from core.services.interfaces.vacancy import IVacancyService
 from core.services.mappers.vacancy import VacancyMapper
 
 
-class VacancyService:
+class VacancyService(IVacancyService):
     def __init__(
             self,
             org_repo: OrganizationCRUDRepository,
@@ -119,12 +120,12 @@ class VacancyService:
                 visibility=visibility,
             )
         )
-        permission: PermissionsShortResponse = (
-            await self.permission_service.allow_user_edit_vacancy(
-                user_id=user_id,
-                vacancy_id=vacancy.id,
-            )
-        )
+        # permission: PermissionsShortResponse = (
+        #     await self.permission_service.allow_user_edit_vacancy(
+        #         user_id=user_id,
+        #         vacancy_id=vacancy.id,
+        #     )
+        # )
         res: VacancyCreateResponse = (
             self.vacancy_mapper.vacancy_to_create_response(
                 vacancy=vacancy,
@@ -170,7 +171,7 @@ class VacancyService:
                     activity_status=activity_status,
                 )
             )
-            if not vacancy is Vacancy:
+            if not vacancy:
                 raise HTTPException(status_code=400, detail="???")
 
             res: VacancyPatchResponse = (

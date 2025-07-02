@@ -1,6 +1,7 @@
 from core.models import Vacancy
 from core.schemas.vacancy import VacancyShortInfoResponse, VacancyActivityStatusType, VacancyVisibilityType, \
     VacancyCreateResponse, VacancyPatchResponse
+from core.utilities.loggers.log_decorator import log_calls
 
 
 class VacancyMapper:
@@ -9,6 +10,7 @@ class VacancyMapper:
     ):
         return
 
+    @log_calls
     def vacancy_to_short_info_response(
             self,
             vacancy: Vacancy,
@@ -23,6 +25,7 @@ class VacancyMapper:
         )
         return res
 
+    @log_calls
     def vacancy_to_create_response(
             self,
             vacancy: Vacancy,
@@ -32,6 +35,7 @@ class VacancyMapper:
         )
         return res
 
+    @log_calls
     def vacancy_to_patch_response(
             self,
             vacancy: Vacancy,

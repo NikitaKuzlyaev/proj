@@ -12,9 +12,10 @@ from core.models.organizationMember import OrganizationMember
 from core.schemas.organization import OrganizationCreateInRequest, OrganizationResponse, SequenceOrganizationResponse, \
     OrganizationDetailInfoResponse, OrganizationInPatch, SequenceAllOrganizationsShortInfoResponse, \
     OrganizationShortInfoResponse, OrganizationInfoForEditResponse, OrganizationVisibilityType, \
-    OrganizationJoinPolicyType, OrganizationActivityStatusType, OrganizationProjectsShortInfoResponse, \
-    OrganizationJoinResponse, OrganizationJoinRequest
-from core.schemas.project import ProjectManagerInfo
+    OrganizationJoinPolicyType, OrganizationActivityStatusType, OrganizationJoinResponse, OrganizationJoinRequest
+from core.schemas.organization_member import OrganizationMemberForAdminResponse, OrganizationMemberDetailInfo, \
+    OrganizationMemberDeleteResponse
+from core.schemas.project import ProjectManagerInfo, ProjectsInOrganizationShortInfoResponse
 from core.services.interfaces.organization import IOrganizationService
 from core.services.interfaces.organization_member import IOrganizationMemberService
 from core.services.interfaces.permission import IPermissionService
@@ -27,12 +28,92 @@ from core.services.providers.project import get_project_service
 router = fastapi.APIRouter(prefix="/org", tags=["organization"])
 
 
+@router.post("/admin/members", response_model=Sequence[OrganizationMemberDetailInfo])
+async def get_organization_members_for_admin(
+        params: dict = Body(...),
+        user: User = Depends(get_user),
+        org_member_service: IOrganizationMemberService = Depends(get_organization_member_service),
+        permission_service: IPermissionService = Depends(get_permission_service),
+) -> JSONResponse:
+    """
+
+    Args:
+        params:
+        user:
+        org_member_service:
+        permission_service:
+
+    Returns:
+
+    """
+    org_id = params.get("org_id")
+    if not org_id or type(org_id) != int:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    flag = await permission_service.can_user_edit_organization(user_id=user.id, org_id=org_id)
+    if not flag:
+        raise HTTPException(status_code=403, detail="Permission denied")
+
+    try:
+        result: Sequence[OrganizationMemberDetailInfo] = (
+            await org_member_service.get_organization_members_for_admin(
+                user_id=user.id,
+                org_id=org_id,
+            )
+        )
+        result = [i.model_dump() for i in result]
+        return JSONResponse({'body': result})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/admin/members")
+async def delete_organization_member_by_manager(
+        params: dict = Body(...),
+        user: User = Depends(get_user),
+        org_member_service: IOrganizationMemberService = Depends(get_organization_member_service),
+        permission_service: IPermissionService = Depends(get_permission_service),
+) -> JSONResponse:
+    """
+    """
+    org_id = params.get("org_id")
+    user_id = params.get("user_id")
+    if not org_id or not user_id or type(org_id) != int or type(user_id) != int:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+    flag = await permission_service.can_user_edit_organization(user_id=user.id, org_id=org_id)
+    if not flag:
+        raise HTTPException(status_code=403, detail="Permission denied")
+
+    try:
+        result: OrganizationMemberDeleteResponse = (
+            await org_member_service.delete_organization_member(
+                user_id=user_id,
+                org_id=org_id,
+            )
+        )
+        result = result.model_dump()
+        return JSONResponse({'body': result})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/join", response_class=JSONResponse)
 async def join_organization(
         org_join_request: OrganizationJoinRequest = Body(...),
         user: User = Depends(get_user),
         org_member_service: IOrganizationMemberService = Depends(get_organization_member_service),
 ) -> JSONResponse:
+    """
+
+    Args:
+        org_join_request:
+        user:
+        org_member_service:
+
+    Returns:
+
+    """
     try:
         result: OrganizationJoinResponse = (
             await org_member_service.join_organization(
@@ -90,7 +171,6 @@ async def get_organization_info_by_id(
     try:
         org: Organization = (
             await organization_service.get_organization_by_id(
-                user_id=user.id,
                 org_id=org_id,
             )
         )
@@ -117,7 +197,6 @@ async def get_organization_info_for_edit_by_id(
     try:
         org: Organization = (
             await organization_service.get_organization_by_id(
-                user_id=user.id,
                 org_id=org_id,
             )
         )
@@ -149,10 +228,18 @@ async def get_organization_detail_info_by_id(
         organization_service: IOrganizationService = Depends(get_organization_service),
         permission_service: IPermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
+    can_user_see_organization_detail: bool = (
+        await permission_service.can_user_see_organization_detail(
+            user_id=user.id,
+            org_id=org_id,
+        )
+    )
+    if not can_user_see_organization_detail:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
     try:
         org: Organization = (
             await organization_service.get_organization_by_id(
-                user_id=user.id,
                 org_id=org_id,
             )
         )
@@ -168,14 +255,6 @@ async def get_organization_detail_info_by_id(
 
         number_of_members = len(org_members)
 
-        # check permissions
-        allow_user_edit: bool = (
-            await permission_service.can_user_edit_organization(
-                user_id=user.id,
-                org_id=org.id,
-            )
-        )
-
         org_response = OrganizationDetailInfoResponse(
             id=org.id,
             name=org.name,
@@ -184,8 +263,6 @@ async def get_organization_detail_info_by_id(
             creator_id=org.creator_id,
             created_at=org.created_at.isoformat(),
             number_of_members=len(org_members),
-            allow_user_edit=allow_user_edit,
-            allow_user_delete=(user.id == org.creator_id),
         )
         content = org_response.model_dump()
         return JSONResponse(content=content)
@@ -246,7 +323,7 @@ async def patch_organization(
     return JSONResponse({"message": "its ok"})
 
 
-@router.get("/projects-short-info", response_model=Sequence[OrganizationProjectsShortInfoResponse])
+@router.get("/projects-short-info", response_model=Sequence[ProjectsInOrganizationShortInfoResponse])
 async def get_organization_projects_short_info(
         org_id: int = Query(),
         user: User = Depends(get_user),
@@ -257,35 +334,41 @@ async def get_organization_projects_short_info(
     try:
         org: Organization = \
             await organization_service.get_organization_by_id(
-                user_id=user.id,
                 org_id=org_id
             )
         if not org:
             raise HTTPException(status_code=404)
 
-        projects: Sequence[Project] = \
-            await project_service.get_all_projects_in_organization_by_org_id(
+        res: Sequence[ProjectsInOrganizationShortInfoResponse] = (
+            await project_service.get_projects_short_info_in_organization(
                 user_id=user.id,
-                org_id=org.id
+                org_id=org.id,
             )
+        )
+        res = [i.model_dump() for i in res]
+        return JSONResponse({"body": res})
 
-        res = [
-            OrganizationProjectsShortInfoResponse(
-                id=project.id,
-                name=project.name,
-                short_description=project.short_description,
-                manager=ProjectManagerInfo(
-                    user_id=user.id,
-                    name=user.username,
-                    avatar=''
-                ),
-                team_current_size=0,
-                team_full_size=0,
-                open_vacancies=0
-            ).model_dump() for project in projects
-        ]
-
-        return JSONResponse({'body': res})
+        # projects: Sequence[Project] = \
+        #     await project_service.get_all_projects_in_organization_by_org_id(
+        #         user_id=user.id,
+        #         org_id=org.id
+        #     )
+        #
+        # res = [
+        #     OrganizationProjectsShortInfoResponse(
+        #         id=project.id,
+        #         name=project.name,
+        #         short_description=project.short_description,
+        #         manager=ProjectManagerInfo(
+        #             user_id=project.creator_id,
+        #             name=user.username,
+        #             avatar=''
+        #         ),
+        #         team_current_size=0,
+        #         team_full_size=0,
+        #         open_vacancies=0
+        #     ).model_dump() for project in projects
+        # ]
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

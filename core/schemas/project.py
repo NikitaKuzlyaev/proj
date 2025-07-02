@@ -85,3 +85,13 @@ class PatchedProjectResponse(BaseSchemaModel):
 
 class ProjectsInOrganizationRequest(BaseSchemaModel):
     org_id: int
+
+
+class ProjectsInOrganizationShortInfoResponse(BaseSchemaModel):
+    id: int
+    name: str
+    short_description: Optional[str] = None
+    manager: ProjectManagerInfo
+    open_vacancies: Optional[int] = Field(default=0)
+    team_current_size: Optional[int] = Field(default=0)
+    team_full_size: Optional[int] = Field(default=0)
