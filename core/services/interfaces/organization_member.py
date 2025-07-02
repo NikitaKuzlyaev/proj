@@ -62,7 +62,6 @@ class IOrganizationMemberService(Protocol):
             self,
             user_id: int,
             org_id: int,
-            raise_if_fail: bool = True,
     ) -> OrganizationMember:
         """
         ???

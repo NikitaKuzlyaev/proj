@@ -92,16 +92,6 @@ async def join_organization(
         user: User = Depends(get_user),
         org_member_service: IOrganizationMemberService = Depends(get_organization_member_service),
 ) -> JSONResponse:
-    """
-
-    Args:
-        org_join_request:
-        user:
-        org_member_service:
-
-    Returns:
-
-    """
     try:
         result: OrganizationJoinResponse = (
             await org_member_service.join_organization(

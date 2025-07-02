@@ -33,81 +33,61 @@ class OrganizationService(IOrganizationService):
     ) -> bool:
         if not org:
             return False
-
         if org.join_policy != OrganizationJoinPolicyType.OPEN.value:
             return False
-
         if org.visibility != OrganizationVisibilityType.OPEN.value:
             return False
-
         return True
 
     @log_calls
     async def get_all_organizations(
             self,
     ) -> Sequence[Organization]:
-        try:
-            orgs: Sequence[Organization] = (
-                await self.org_repo.get_all_organizations()
-            )
-            return orgs
-        except Exception as e:
-            raise e
+        orgs: Sequence[Organization] = (
+            await self.org_repo.get_all_organizations()
+        )
+        return orgs
 
     @log_calls
     async def get_all_organizations_with_short_info(
             self,
             user_id: int,
     ) -> Sequence[OrganizationShortInfoResponse]:
-
-        try:
-            all_orgs: Sequence[Organization] = (
-                await self.org_repo.get_all_organizations()
+        all_orgs: Sequence[Organization] = (
+            await self.org_repo.get_all_organizations()
+        )
+        user_orgs: Sequence[OrganizationMember] = (
+            await self.member_repo.get_all_user_organization_memberships(
+                user_id=user_id,
             )
-
-            user_orgs: Sequence[OrganizationMember] = (
-                await self.member_repo.get_all_user_organization_memberships(
-                    user_id=user_id,
-                )
-            )
-
-            user_orgs_id_set = set([member.organization_id for member in user_orgs])
-
-            result = (
-                [
-                    OrganizationShortInfoResponse(
-                        id=org.id,
-                        name=org.name,
-                        short_description=org.short_description,
-                        creator_id=org.creator_id,
-                        is_user_member=(org.id in user_orgs_id_set),
-                        join_policy=OrganizationJoinPolicyType(org.join_policy),
-                    ) for org in all_orgs
-                ]
-            )
-
-            return result
-
-        except Exception as e:
-            raise e
+        )
+        user_orgs_id_set = set([member.organization_id for member in user_orgs])
+        result = (
+            [
+                OrganizationShortInfoResponse(
+                    id=org.id,
+                    name=org.name,
+                    short_description=org.short_description,
+                    creator_id=org.creator_id,
+                    is_user_member=(org.id in user_orgs_id_set),
+                    join_policy=OrganizationJoinPolicyType(org.join_policy),
+                ) for org in all_orgs
+            ]
+        )
+        return result
 
     @log_calls
     async def get_organization_by_id(
             self,
             org_id: int,
-            raise_on_failure: bool = True,
     ) -> Organization | None:
-
         org: Organization | None = (
             await self.org_repo.get_organization_by_id(
                 org_id=org_id,
             )
         )
         if not org:
-            if raise_on_failure:
-                raise EntityDoesNotExist
-            return None
-
+            raise EntityDoesNotExist("Организация с указанным id не существует")
         return org
 
     @log_calls
@@ -118,29 +98,23 @@ class OrganizationService(IOrganizationService):
             short_description: str,
             long_description: str,
     ) -> Organization:
-
-        try:
-            new_org = (
-                await self.org_repo.create_organization(
-                    name=name,
-                    short_description=short_description,
-                    long_description=long_description,
-                    creator_id=user_id,
-                )
+        new_org = (
+            await self.org_repo.create_organization(
+                name=name,
+                short_description=short_description,
+                long_description=long_description,
+                creator_id=user_id,
             )
-            new_member = \
-                await self.member_repo.create_organization_member(
-                    user_id=user_id,
-                    org_id=new_org.id,
-                )
-            new_permission_for_edit_organization = \
-                await self.permission_repo.allow_user_edit_organization(
-                    user_id=user_id,
-                    org_id=new_org.id
-                )
-            return new_org
-        except Exception as e:
-            raise e
+        )
+        await self.member_repo.create_organization_member(
+            user_id=user_id,
+            org_id=new_org.id,
+        )
+        await self.permission_repo.allow_user_edit_organization(
+            user_id=user_id,
+            org_id=new_org.id
+        )
+        return new_org
 
     @log_calls
     async def get_organization_members_by_org_id(
@@ -148,6 +122,13 @@ class OrganizationService(IOrganizationService):
             user_id: int,
             org_id: int,
     ) -> Sequence[OrganizationMember]:
+        org: Organization | None = (
+            await self.org_repo.get_organization_by_id(
+                org_id=org_id,
+            )
+        )
+        if not org:
+            raise EntityDoesNotExist("Организация с указанным id не существует")
 
         org_members: Sequence[OrganizationMember] = (
             await self.member_repo.get_organization_members_by_org_id(
@@ -155,7 +136,6 @@ class OrganizationService(IOrganizationService):
             )
         )
         return org_members
-
 
     @log_calls
     async def patch_organization_by_id(
@@ -169,7 +149,7 @@ class OrganizationService(IOrganizationService):
             activity_status: OrganizationActivityStatusType,
             join_policy: OrganizationJoinPolicyType,
     ) -> Organization | None:
-        org: Organization = (
+        org: Organization | None = (
             await self.org_repo.patch_organization_by_id(
                 org_id=org_id,
                 name=name,
@@ -180,4 +160,7 @@ class OrganizationService(IOrganizationService):
                 join_policy=join_policy.value,
             )
         )
+        if not org:
+            raise EntityDoesNotExist("Организация с указанным id не существует")
+
         return org

@@ -39,7 +39,6 @@ class OrganizationMemberService(IOrganizationMemberService):
             user_id: int,
             org_id: int,
     ) -> OrganizationMemberDeleteResponse:
-        ...
         member: OrganizationMember = (
             await self.member_repo.get_organization_member_by_user_and_org(
                 org_id=org_id,
@@ -52,15 +51,13 @@ class OrganizationMemberService(IOrganizationMemberService):
                 message="Entity not found",
             )
             return res
-        else:
-            #await self.member_repo.delete_member_by_id(member_id=member.id)
-            await self.org_repo.delete_user_from_organization(member=member)
-            res = OrganizationMemberDeleteResponse(
-                success=True,
-                message="",
-            )
-            return res
 
+        await self.org_repo.delete_user_from_organization(member=member)
+        res = OrganizationMemberDeleteResponse(
+            success=True,
+            message="",
+        )
+        return res
 
     @log_calls
     async def get_organization_members_for_admin(
@@ -68,22 +65,34 @@ class OrganizationMemberService(IOrganizationMemberService):
             user_id: int,
             org_id: int,
     ) -> Sequence[OrganizationMemberDetailInfo]:
-        try:
-            res: Sequence[OrganizationMemberDetailInfo] = (
-                await self.member_repo.get_organization_members_detail_info_by_org_id(
-                    org_id=org_id,
-                )
+        org: Organization | None = (
+            await self.org_repo.get_organization_by_id(
+                org_id=org_id,
             )
-            return res
+        )
+        if not org:
+            raise EntityDoesNotExist("Организация с указанным id не существует")
 
-        except Exception as e:
-            raise e
+        res: Sequence[OrganizationMemberDetailInfo] = (
+            await self.member_repo.get_organization_members_detail_info_by_org_id(
+                org_id=org_id,
+            )
+        )
+        return res
 
     @log_calls
     async def get_organization_members_by_org_id(
             self,
             org_id: int,
     ) -> Sequence[OrganizationMember] | None:
+        org: Organization | None = (
+            await self.org_repo.get_organization_by_id(
+                org_id=org_id,
+            )
+        )
+        if not org:
+            raise EntityDoesNotExist("Организация с указанным id не существует")
+
         org_members: Sequence[OrganizationMember] | None = (
             await self.member_repo.get_organization_members_by_org_id(org_id=org_id)
         )
@@ -96,43 +105,29 @@ class OrganizationMemberService(IOrganizationMemberService):
             org_id: int,
             code: int | None = None,
     ) -> OrganizationJoinResponse:
+        org: Organization | None = (
+            await self.org_repo.get_organization_by_id(
+                org_id=org_id,
+            )
+        )
+        if not org:
+            raise EntityDoesNotExist("Организация с указанным id не существует")
 
         try:
-            organization: Organization = (
-                await self.org_service.get_organization_by_id(org_id=org_id,)
-            )
-            user: User = await self.user_service.get_user_by_id(user_id=user_id)
-
             org_member: OrganizationMember | None = (
-                await self.get_organization_member_by_user_and_org(user_id=user_id, org_id=org_id, raise_if_fail=False)
+                await self.get_organization_member_by_user_and_org(user_id=user_id, org_id=org_id)
             )
             if org_member:
                 raise EntityAlreadyExists('Пользователь уже в организации')
+        except EntityDoesNotExist:
+            pass  # Если OrganizationMember не нашелся, то все ок
 
-            if organization.join_policy == OrganizationJoinPolicyType.CLOSED.value:
-                raise PermissionDenied('Организация закрыта')
-            elif organization.join_policy == OrganizationJoinPolicyType.CODE.value:
-                # заглушка
-                if code is None:
-                    raise PermissionDenied('Код вступления неверный')
-
-            org_member: OrganizationMember = await self.create_org_member(
-                user_id=user_id,
-                org_id=org_id,
-            )
-            res = OrganizationJoinResponse(member_id=org_member.id)
-            return res
-        except Exception as e:
-            raise e
-
-    @log_calls
-    async def create_org_member(
-            self,
-            user_id: int,
-            org_id: int,
-    ) -> OrganizationMember:
-        organization: Organization = await self.org_service.get_organization_by_id(org_id=org_id,)
-        user: User = await self.user_service.get_user_by_id(user_id=user_id)
+        if org.join_policy == OrganizationJoinPolicyType.CLOSED.value:
+            raise PermissionDenied('Организация закрыта')
+        elif org.join_policy == OrganizationJoinPolicyType.CODE.value:
+            # заглушка
+            if code is None:
+                raise PermissionDenied('Код вступления неверный')
 
         org_member: OrganizationMember = (
             await self.member_repo.create_organization_member(
@@ -140,17 +135,24 @@ class OrganizationMemberService(IOrganizationMemberService):
                 org_id=org_id,
             )
         )
-        return org_member
+        res = OrganizationJoinResponse(
+            member_id=org_member.id,
+        )
+        return res
 
     @log_calls
     async def get_organization_member_by_user_and_org(
             self,
             user_id: int,
             org_id: int,
-            raise_if_fail: bool = True
     ) -> OrganizationMember:
-        organization: Organization = await self.org_service.get_organization_by_id(org_id=org_id,)
-        user: User = await self.user_service.get_user_by_id(user_id=user_id)
+        org: Organization | None = (
+            await self.org_repo.get_organization_by_id(
+                org_id=org_id,
+            )
+        )
+        if not org:
+            raise EntityDoesNotExist("Организация с указанным id не существует")
 
         org_member: OrganizationMember | None = (
             await self.member_repo.get_organization_member_by_user_and_org(
@@ -158,8 +160,9 @@ class OrganizationMemberService(IOrganizationMemberService):
                 user_id=user_id,
             )
         )
-        if raise_if_fail and org_member:
+        if not org_member:
             raise EntityDoesNotExist
+
         return org_member
 
     @log_calls
@@ -167,7 +170,6 @@ class OrganizationMemberService(IOrganizationMemberService):
             self,
             org_member_id: int,
     ) -> OrganizationMember:
-
         org_member: OrganizationMember | None = (
             await self.member_repo.get_organization_member_by_id(
                 org_member_id=org_member_id,

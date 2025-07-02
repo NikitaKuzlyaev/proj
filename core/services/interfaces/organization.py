@@ -45,14 +45,12 @@ class IOrganizationService(Protocol):
     async def get_organization_by_id(
             self,
             org_id: int,
-            raise_on_failure: bool = True,
     ) -> Organization:
         """
         Получает объект организации по ее id
 
         Args:
             org_id: id организации для получения ее объекта
-            raise_on_failure: прокидывать исключение при ошибке или возвращать None
 
         Returns:
             Organization: Объект Organization
