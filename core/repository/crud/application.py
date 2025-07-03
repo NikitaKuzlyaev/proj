@@ -1,6 +1,6 @@
-from typing import Sequence
+from typing import Sequence, Tuple
 
-from sqlalchemy import select, update
+from sqlalchemy import select, update, Row
 
 from core.dependencies.repository import get_repository
 from core.models import Project
@@ -8,7 +8,7 @@ from core.models.application import Application
 from core.models.permissions import Permission, PermissionType, ResourceType
 from core.models.vacancy import Vacancy
 from core.repository.crud.base import BaseCRUDRepository
-from core.schemas.application import ApplicationActivityStatusType
+from core.schemas.application import ApplicationActivityStatusType, ApplicationMainInfo
 from core.utilities.loggers.log_decorator import log_calls
 
 
@@ -73,6 +73,50 @@ class ApplicationCRUDRepository(BaseCRUDRepository):
             )
         )
         return application.scalar_one_or_none()
+
+    @log_calls
+    async def get_user_applications_main_info_in_organization(
+            self,
+            user_id: int,
+            org_id: int,
+    ) -> Sequence[ApplicationMainInfo]:
+        rows = await self.async_session.execute(
+            select(
+                Application,
+                Vacancy,
+                Project,
+            ).join(
+                Vacancy, Vacancy.id == Application.vacancy_id,
+            ).join(
+                Project, Project.id == Vacancy.project_id,
+            ).where(
+                Application.user_id == user_id,
+            )
+        )
+        tuples: Sequence[
+            Row[
+                Tuple[
+                    Application,
+                    Vacancy,
+                    Project,
+                ]
+            ]
+        ] = rows.all()
+
+        result: Sequence[ApplicationMainInfo] = [
+            ApplicationMainInfo(
+                application_id=application.id,
+                description=application.description,
+                vacancy_id=vacancy.id,
+                vacancy_name=vacancy.name,
+                project_id=project.id,
+                project_name=project.name,
+                activity_status=ApplicationActivityStatusType(application.activity_status),
+                created_at=application.created_at.isoformat(),
+            ) for application, vacancy, project in tuples
+        ]
+        return result
+
 
     @log_calls
     async def get_active_application_by_user_and_vacancy(

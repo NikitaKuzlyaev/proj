@@ -1,6 +1,7 @@
 from fastapi import Depends
 
 from core.dependencies.repository import get_repository
+from core.repository.crud.application import ApplicationCRUDRepository
 from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
 from core.repository.crud.permission import PermissionCRUDRepository
@@ -23,6 +24,7 @@ def get_permission_service(
         vacancy_repo: VacancyCRUDRepository = Depends(get_repository(VacancyCRUDRepository)),
         project_repo: ProjectCRUDRepository = Depends(get_repository(ProjectCRUDRepository)),
         org_service: IOrganizationService = Depends(get_organization_service),
+        application_repo: ApplicationCRUDRepository = Depends(get_repository(ApplicationCRUDRepository)),
 ) -> IPermissionService:
     return PermissionService(
         org_repo=org_repo,
@@ -33,4 +35,5 @@ def get_permission_service(
         vacancy_repo=vacancy_repo,
         project_repo=project_repo,
         org_service=org_service,
+        application_repo=application_repo,
     )

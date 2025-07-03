@@ -1,5 +1,6 @@
-from core.models import Permission, User, Vacancy, Organization, OrganizationMember
+from core.models import Permission, User, Vacancy, Organization, OrganizationMember, Application
 from core.models.permissions import ResourceType, PermissionType
+from core.repository.crud.application import ApplicationCRUDRepository
 from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
 from core.repository.crud.permission import PermissionCRUDRepository
@@ -27,6 +28,7 @@ class PermissionService(IPermissionService):
             vacancy_repo: VacancyCRUDRepository,
             project_repo: ProjectCRUDRepository,
             org_service: IOrganizationService,
+            application_repo: ApplicationCRUDRepository,
     ):
         self.org_repo = org_repo
         self.member_repo = member_repo
@@ -36,6 +38,7 @@ class PermissionService(IPermissionService):
         self.vacancy_repo = vacancy_repo
         self.project_repo = project_repo
         self.org_service = org_service
+        self.application_repo = application_repo
 
     @trusted_method
     @log_calls
@@ -60,6 +63,24 @@ class PermissionService(IPermissionService):
             )
 
         return result
+
+    @trusted_method
+    @log_calls
+    async def can_user_edit_yourself_application(
+            self,
+            user_id: int,
+            application_id: int,
+    ) -> bool:
+        application: Application | None = (
+            await self.application_repo.get_application_by_id(
+                application_id=application_id,
+            )
+        )
+        if not application:
+            return False
+
+        res = bool(application.user_id == user_id)
+        return res
 
     @trusted_method
     @log_calls

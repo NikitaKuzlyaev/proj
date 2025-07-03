@@ -7,6 +7,15 @@ class ApplicationRequest(BaseSchemaModel):
     vacancy_id: int
     description: str
 
+class UserApplicationsInOrganizationRequest(BaseSchemaModel):
+    org_id: int
+
+class ApplicationId(BaseSchemaModel):
+    application_id: int
+
+class ApplicationCancelByUserRequest(BaseSchemaModel):
+    application_id: int
+
 class ApplicationActivityStatusType(str, Enum):
     ACTIVE = "ACTIVE"
     REJECTED = "REJECTED"
@@ -18,3 +27,14 @@ class ApplicationActivityStatusType(str, Enum):
 class ApplicationShortInfo(BaseSchemaModel):
     application_id: int
     vacancy_id: int
+
+
+class ApplicationMainInfo(BaseSchemaModel):
+    application_id: int
+    description: str
+    vacancy_id: int
+    vacancy_name: str
+    project_id: int
+    project_name: str
+    activity_status: ApplicationActivityStatusType
+    created_at: str

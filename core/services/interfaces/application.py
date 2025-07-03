@@ -1,9 +1,10 @@
 from typing import Sequence, Protocol
 
-from core.schemas.application import ApplicationShortInfo
+from core.schemas.application import ApplicationShortInfo, ApplicationMainInfo, ApplicationId
 
 
 class IApplicationService(Protocol):
+
 
     async def create_application(
             self,
@@ -14,6 +15,13 @@ class IApplicationService(Protocol):
         """
         Создать отклик на вакансию
         """
+        ...
+
+    async def get_user_applications_main_info_in_organization(
+            self,
+            user_id: int,
+            org_id: int,
+    ) -> Sequence[ApplicationMainInfo]:
         ...
 
     async def get_all_active_applications_by_user_and_project(
@@ -30,7 +38,7 @@ class IApplicationService(Protocol):
             self,
             application_id: int,
             status: str,
-    ) -> ...:
+    ) -> ApplicationId:
         """
         Поменять статус вакансии
         """
@@ -39,7 +47,7 @@ class IApplicationService(Protocol):
     async def cancel_application(
             self,
             application_id: int,
-    ) -> ...:
+    ) -> ApplicationId:
         """
         Отменить отклик от лица пользователя
         """

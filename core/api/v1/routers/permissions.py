@@ -74,6 +74,7 @@ async def can_user_edit_project(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
 @router.post("/is-user-allowed-to-edit-organization")
 async def can_user_edit_organization(
         params: dict = Body(...),
