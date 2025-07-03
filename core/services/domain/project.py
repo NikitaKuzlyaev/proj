@@ -149,7 +149,7 @@ class ProjectService(IProjectService):
     ) -> PatchedProjectResponse:
 
         project: Project = (
-            await self.project_repo.patch_project_by_id(
+            await self.project_repo.patch_project(
                 project_id=project_id,
                 org_id=org_id,
                 name=name,

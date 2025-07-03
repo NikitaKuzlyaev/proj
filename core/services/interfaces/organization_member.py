@@ -2,7 +2,7 @@ from typing import Protocol, Sequence
 
 from core.models.organizationMember import OrganizationMember
 from core.schemas.organization import OrganizationJoinResponse
-from core.schemas.organization_member import OrganizationMemberForAdminResponse, OrganizationMemberDetailInfo, \
+from core.schemas.organization_member import OrganizationMemberDetailInfo, \
     OrganizationMemberDeleteResponse
 
 

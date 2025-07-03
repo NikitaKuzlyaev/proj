@@ -1,10 +1,10 @@
-from core.schemas.base import BaseSchemaModel
+from enum import Enum
 
 
-class OfferInCreate(BaseSchemaModel):
-    ...
-
-
-class OfferInUpdate(BaseSchemaModel):
-    ...
+class OfferActivityStatusType(str, Enum):
+    ACTIVE = "ACTIVE"
+    REJECTED = "REJECTED"
+    ACCEPTED = "ACCEPTED"
+    CANCELED = "CANCELED"
+    INACTIVE = "INACTIVE"
 

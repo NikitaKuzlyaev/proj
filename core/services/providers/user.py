@@ -7,9 +7,11 @@ from core.repository.crud.project import ProjectCRUDRepository
 from core.repository.crud.user import UserCRUDRepository
 from core.repository.crud.vacancy import VacancyCRUDRepository
 from core.services.domain.user import UserService
-#from core.services.interfaces.permission import IPermissionService
+# from core.services.interfaces.permission import IPermissionService
 from core.services.interfaces.user import IUserService
 from core.services.mappers.vacancy import VacancyMapper, get_vacancy_mapper
+
+
 #from core.services.providers.permission import get_permission_service
 
 

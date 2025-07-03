@@ -3,7 +3,7 @@ from typing import Sequence, Tuple
 from sqlalchemy import select, Row, delete
 
 from core.dependencies.repository import get_repository
-from core.models import User, Organization, Permission
+from core.models import User, Organization
 from core.models.organizationMember import OrganizationMember
 from core.repository.crud.base import BaseCRUDRepository
 from core.schemas.organization_member import OrganizationMemberDetailInfo
@@ -29,8 +29,8 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
     @log_calls
     async def get_organization_member_by_user_and_org(
             self,
-            org_id: int,
             user_id: int,
+            org_id: int,
     ) -> OrganizationMember | None:
         result = await self.async_session.execute(
             select(
@@ -56,7 +56,7 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
             select(
                 OrganizationMember
             ).where(
-                OrganizationMember.id == org_member_id
+                OrganizationMember.id == org_member_id,
             )
         )
         return result.scalars().one_or_none()
@@ -75,7 +75,7 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
             select(
                 OrganizationMember
             ).where(
-                OrganizationMember.user_id == user_id
+                OrganizationMember.user_id == user_id,
             )
         )
         return result.scalars().all()
@@ -94,7 +94,7 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
             select(
                 OrganizationMember
             ).where(
-                OrganizationMember.organization_id == org_id
+                OrganizationMember.organization_id == org_id,
             )
         )
         return result.scalars().all()
@@ -111,14 +111,13 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
                 User,
                 Organization,
             ).where(
-                OrganizationMember.organization_id == org_id
+                OrganizationMember.organization_id == org_id,
             ).join(
                 User, User.id == OrganizationMember.user_id
             ).join(
                 Organization, Organization.id == OrganizationMember.organization_id
             )
         )
-
         tuples: Sequence[
             Row[
                 Tuple[
@@ -139,7 +138,6 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
                 ) for org_member, user, org in tuples
             ]
         )
-
         return result
 
     @log_calls
@@ -179,7 +177,7 @@ class OrganizationMemberCRUDRepository(BaseCRUDRepository):
             select(
                 OrganizationMember
             ).where(
-                OrganizationMember.user_id == user_id
+                OrganizationMember.user_id == user_id,
             )
         )
         return result.scalars().all()

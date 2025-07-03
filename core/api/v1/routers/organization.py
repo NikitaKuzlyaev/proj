@@ -7,16 +7,16 @@ from fastapi import Query, HTTPException
 from starlette.responses import JSONResponse
 
 from core.dependencies.authorization import get_user
-from core.models import User, Organization, Project
+from core.models import User, Organization
 from core.models.organizationMember import OrganizationMember
 from core.schemas.organization import OrganizationCreateInRequest, OrganizationResponse, SequenceOrganizationResponse, \
     OrganizationDetailInfoResponse, OrganizationInPatch, SequenceAllOrganizationsShortInfoResponse, \
     OrganizationShortInfoResponse, OrganizationInfoForEditResponse, OrganizationVisibilityType, \
     OrganizationJoinPolicyType, OrganizationActivityStatusType, OrganizationJoinResponse, OrganizationJoinRequest, \
     OrganizationMembersForAdminRequest
-from core.schemas.organization_member import OrganizationMemberForAdminResponse, OrganizationMemberDetailInfo, \
+from core.schemas.organization_member import OrganizationMemberDetailInfo, \
     OrganizationMemberDeleteResponse
-from core.schemas.project import ProjectManagerInfo, ProjectsInOrganizationShortInfoResponse
+from core.schemas.project import ProjectsInOrganizationShortInfoResponse
 from core.services.interfaces.organization import IOrganizationService
 from core.services.interfaces.organization_member import IOrganizationMemberService
 from core.services.interfaces.permission import IPermissionService

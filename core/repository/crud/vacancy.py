@@ -8,7 +8,7 @@ from core.models.permissions import Permission, PermissionType, ResourceType
 from core.models.user import User
 from core.models.vacancy import Vacancy
 from core.repository.crud.base import BaseCRUDRepository
-from core.schemas.project import ProjectManagerInfo, ProjectOfVacancyInfo, ProjectVacanciesShortInfoResponse
+from core.schemas.project import ProjectManagerInfo, ProjectOfVacancyInfo, ProjectVacanciesFullInfoResponse
 from core.schemas.vacancy import VacancyActivityStatusType, VacancyVisibilityType
 from core.utilities.loggers.log_decorator import log_calls
 
@@ -39,7 +39,7 @@ class VacancyCRUDRepository(BaseCRUDRepository):
             self,
             project_id: int,
             user_id: int,
-    ) -> Sequence[ProjectVacanciesShortInfoResponse]:
+    ) -> Sequence[ProjectVacanciesFullInfoResponse]:
         stmt = (
             select(
                 Vacancy,
@@ -80,9 +80,9 @@ class VacancyCRUDRepository(BaseCRUDRepository):
             ]
         ] = rows.all()
 
-        result: Sequence[ProjectVacanciesShortInfoResponse] = \
+        result: Sequence[ProjectVacanciesFullInfoResponse] = \
             [
-                ProjectVacanciesShortInfoResponse(
+                ProjectVacanciesFullInfoResponse(
                     vacancy_id=vacancy.id,
                     manager=ProjectManagerInfo(
                         user_id=manager.id,
@@ -95,17 +95,13 @@ class VacancyCRUDRepository(BaseCRUDRepository):
                     ),
                     name=vacancy.name,
                     short_description=vacancy.short_description,
-                    number_of_offers=0,
-                    number_of_responses=0,
+                    number_of_active_offers=0,
+                    number_of_active_applications=0,
                     created_at=vacancy.created_at.isoformat(),
                     activity_status=VacancyActivityStatusType(vacancy.activity_status),
                     visibility=VacancyVisibilityType(vacancy.visibility),
                     can_user_edit=(
                         not permission_for_edit_vacancy is None
-                    ),
-                    can_user_make_response=(
-                            vacancy.activity_status == VacancyActivityStatusType.ACTIVE and
-                            vacancy.visibility == VacancyVisibilityType.OPEN
                     ),
                 ) for vacancy, project, manager, permission_for_edit_vacancy in tuples
             ]

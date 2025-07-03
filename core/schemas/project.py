@@ -28,19 +28,21 @@ class ProjectOfVacancyInfo(BaseSchemaModel):
     name: str
 
 
-class ProjectVacanciesShortInfoResponse(BaseSchemaModel):
+class ProjectVacanciesFullInfoResponse(BaseSchemaModel):
     vacancy_id: int
     manager: ProjectManagerInfo
     project: ProjectOfVacancyInfo
     name: str
     short_description: str
-    number_of_responses: int
-    number_of_offers: int
+    number_of_active_applications: int
+    number_of_active_offers: int
     created_at: str
     activity_status: VacancyActivityStatusType
     visibility: VacancyVisibilityType
-    can_user_make_response: bool = Field(default=True)
+    can_user_make_applications: bool = Field(default=True)
     can_user_edit: bool = Field(default=False)
+    has_user_active_applications: bool = Field(default=False)
+    has_user_active_offer: bool = Field(default=False)
 
 
 class ProjectCreateRequest(BaseSchemaModel):

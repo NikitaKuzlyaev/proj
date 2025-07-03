@@ -3,7 +3,7 @@ from typing import Sequence
 from sqlalchemy import select, update, func
 
 from core.dependencies.repository import get_repository
-from core.models import Project, Organization, Vacancy
+from core.models import Project, Vacancy
 from core.models.user import User
 from core.repository.crud.base import BaseCRUDRepository
 from core.schemas.project import ProjectsInOrganizationShortInfoResponse, ProjectManagerInfo
@@ -15,12 +15,11 @@ class ProjectCRUDRepository(BaseCRUDRepository):
 
     async def get_projects_short_info_in_organization(
         self,
-        user_id: int,
+        user_id: int, # затем будет фильтрация по видимости для пользователя
         org_id: int,
     ) -> Sequence[ProjectsInOrganizationShortInfoResponse]:
 
-
-        stmt = (
+        result = await self.async_session.execute(
             select(
                 Project,
                 User,
@@ -34,11 +33,8 @@ class ProjectCRUDRepository(BaseCRUDRepository):
             .where(Project.organization_id == org_id)
             .group_by(Project.id, User.id)
         )
-
-        result = await self.async_session.execute(stmt)
         rows = result.all()
-
-        return [
+        res = [
             ProjectsInOrganizationShortInfoResponse(
                 id=project.id,
                 name=project.name,
@@ -54,6 +50,7 @@ class ProjectCRUDRepository(BaseCRUDRepository):
             )
             for project, user, open_vacancies in rows
         ]
+        return res
 
 
 
@@ -87,7 +84,7 @@ class ProjectCRUDRepository(BaseCRUDRepository):
             select(
                 Project
             ).where(
-                Project.organization_id == org_id
+                Project.organization_id == org_id,
             )
         )
         projects = result.scalars().all()
@@ -107,7 +104,7 @@ class ProjectCRUDRepository(BaseCRUDRepository):
             select(
                 Project
             ).where(
-                Project.id == project_id
+                Project.id == project_id,
             )
         )
         project = result.scalars().one_or_none()
@@ -135,7 +132,7 @@ class ProjectCRUDRepository(BaseCRUDRepository):
         return user
 
     @log_calls
-    async def patch_project_by_id(
+    async def patch_project(
             self,
             project_id: int,
             org_id: int,
@@ -159,19 +156,16 @@ class ProjectCRUDRepository(BaseCRUDRepository):
         await self.async_session.execute(
             update(
                 Project
-            )
-            .where(
+            ).where(
                 Project.id == project_id
-            )
-            .values(
+            ).values(
                 organization_id=org_id,
                 name=name,
                 short_description=short_description,
                 long_description=long_description,
                 visibility=visibility,
                 activity_status=activity_status
-            )
-            .execution_options(
+            ).execution_options(
                 synchronize_session="fetch"
             )
         )

@@ -1,4 +1,4 @@
-from core.models import Permission, User, Vacancy, Organization, Project, OrganizationMember
+from core.models import Permission, User, Vacancy, Organization, OrganizationMember
 from core.models.permissions import ResourceType, PermissionType
 from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository

@@ -1,15 +1,13 @@
-from typing import Sequence, cast
+from typing import Sequence
 
 from core.models import Organization
 from core.models.organizationMember import OrganizationMember
-from core.models.user import User
 from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
 from core.repository.crud.permission import PermissionCRUDRepository
 from core.schemas.organization import OrganizationJoinResponse, OrganizationJoinPolicyType
-from core.schemas.organization_member import OrganizationMemberForAdminResponse, OrganizationMemberDetailInfo, \
+from core.schemas.organization_member import OrganizationMemberDetailInfo, \
     OrganizationMemberDeleteResponse
-
 from core.services.interfaces.organization import IOrganizationService
 from core.services.interfaces.organization_member import IOrganizationMemberService
 from core.services.interfaces.user import IUserService

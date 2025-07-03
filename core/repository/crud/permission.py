@@ -13,15 +13,15 @@ class PermissionCRUDRepository(BaseCRUDRepository):
             self,
             user_id: int,
             resource_type: str,
-            permission_type: str,
             resource_id: int,
+            permission_type: str,
     ) -> Permission | None:
         """
         Найти существующий Permission с указанными параметрами
         :param user_id: id объекта User
         :param resource_type: тип ресурса (str, Enum)
-        :param permission_type: тип разрешения (str, Enum)
         :param resource_id: id ресурса
+        :param permission_type: тип разрешения (str, Enum)
         :return: существующий Permission или None
         """
         permission = await self.async_session.execute(
@@ -31,19 +31,18 @@ class PermissionCRUDRepository(BaseCRUDRepository):
                 Permission.user_id == user_id,
                 Permission.resource_type == resource_type,
                 Permission.resource_id == resource_id,
-                Permission.permission_type == permission_type
+                Permission.permission_type == permission_type,
             )
         )
-        permission = permission.scalar_one_or_none()
-        return permission
+        return permission.scalar_one_or_none()
 
     @log_calls
     async def create_permission(
             self,
             user_id: int,
             resource_type: str,
-            permission_type: str,
             resource_id: int,
+            permission_type: str,
     ) -> Permission | None:
         """
         Создать Permission с указанными параметрами
@@ -57,14 +56,14 @@ class PermissionCRUDRepository(BaseCRUDRepository):
             await self.search_exist_permission(
                 user_id=user_id,
                 resource_type=resource_type,
-                permission_type=permission_type,
                 resource_id=resource_id,
+                permission_type=permission_type,
             )
         )
         if permission:
             return permission
 
-        permission: Permission = Permission(
+        permission = Permission(
             user_id=user_id,
             resource_type=ResourceType(resource_type),
             resource_id=resource_id,
@@ -91,8 +90,8 @@ class PermissionCRUDRepository(BaseCRUDRepository):
             await self.create_permission(
                 user_id=user_id,
                 resource_type=ResourceType.VACANCY.value,
-                permission_type=PermissionType.EDIT_VACANCY.value,
                 resource_id=vacancy_id,
+                permission_type=PermissionType.EDIT_VACANCY.value,
             )
         )
         return permission
@@ -113,8 +112,8 @@ class PermissionCRUDRepository(BaseCRUDRepository):
             await self.create_permission(
                 user_id=user_id,
                 resource_type=ResourceType.ORGANIZATION.value,
-                permission_type=PermissionType.EDIT_ORGANIZATION.value,
                 resource_id=org_id,
+                permission_type=PermissionType.EDIT_ORGANIZATION.value,
             )
         )
         return permission
@@ -134,8 +133,8 @@ class PermissionCRUDRepository(BaseCRUDRepository):
                 Permission
             ).where(
                 Permission.user_id == user_id,
-                Permission.resource_id == user_id,
                 Permission.resource_type == ResourceType.DOMAIN.value,
+                Permission.resource_id == user_id,
                 Permission.permission_type == PermissionType.ADMIN.value,
             )
         )
@@ -158,8 +157,8 @@ class PermissionCRUDRepository(BaseCRUDRepository):
                 Permission
             ).where(
                 Permission.user_id == user_id,
-                Permission.resource_id == org_id,
                 Permission.resource_type == ResourceType.ORGANIZATION.value,
+                Permission.resource_id == org_id,
                 Permission.permission_type == PermissionType.EDIT_ORGANIZATION.value,
             )
         )
@@ -182,8 +181,8 @@ class PermissionCRUDRepository(BaseCRUDRepository):
                 Permission
             ).where(
                 Permission.user_id == user_id,
-                Permission.resource_id == org_id,
                 Permission.resource_type == ResourceType.ORGANIZATION.value,
+                Permission.resource_id == org_id,
                 Permission.permission_type == PermissionType.CREATE_PROJECTS_INSIDE_ORGANIZATION.value
             )
         )
@@ -206,8 +205,8 @@ class PermissionCRUDRepository(BaseCRUDRepository):
                 Permission
             ).where(
                 Permission.user_id == user_id,
-                Permission.resource_id == project_id,
                 Permission.resource_type == ResourceType.PROJECT.value,
+                Permission.resource_id == project_id,
                 Permission.permission_type == PermissionType.EDIT_PROJECT.value
             )
         )

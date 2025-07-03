@@ -8,12 +8,12 @@ from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
 from core.repository.crud.project import ProjectCRUDRepository
 from core.repository.crud.vacancy import VacancyCRUDRepository
-from core.schemas.permission import PermissionsShortResponse
-from core.schemas.project import ProjectVacanciesShortInfoResponse
+from core.schemas.project import ProjectVacanciesFullInfoResponse
 from core.schemas.vacancy import VacancyShortInfoResponse, VacancyCreateResponse, VacancyPatchResponse
 from core.services.interfaces.permission import IPermissionService
 from core.services.interfaces.vacancy import IVacancyService
 from core.services.mappers.vacancy import VacancyMapper
+from core.utilities.exceptions.database import EntityDoesNotExist
 
 
 class VacancyService(IVacancyService):
@@ -48,16 +48,16 @@ class VacancyService(IVacancyService):
             self,
             project_id: int,
             user_id: int
-    ) -> Sequence[ProjectVacanciesShortInfoResponse]:
+    ) -> Sequence[ProjectVacanciesFullInfoResponse]:
         project: Project = (
             await self.project_repo.get_project_by_id(
                 project_id=project_id,
             )
         )
         if not project:
-            raise HTTPException(status_code=404, detail="Project not found")
+            raise EntityDoesNotExist('Указанного проекта не существует')
 
-        res: Sequence[ProjectVacanciesShortInfoResponse] = (
+        res: Sequence[ProjectVacanciesFullInfoResponse] = (
             await self.vacancy_repo.get_all_vacancies_in_project_detailed_info(
                 project_id=project.id,
                 user_id=user_id,

@@ -18,9 +18,9 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
             name: str,
             short_description: str,
             long_description: str,
-            visibility: str,
-            activity_status: str,
             join_policy: str,
+            activity_status: str,
+            visibility: str,
     ) -> Organization | None:
         """
         Обновляет поля объекта Organization на указанные в параметрах
@@ -28,9 +28,9 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
         :param name: название
         :param short_description: короткое описание
         :param long_description: длинное описание
-        :param visibility: тип видимости (str, Enum)
-        :param activity_status: статус активности (str, Enum)
         :param join_policy: политика вступления (str, Enum)
+        :param activity_status: статус активности (str, Enum)
+        :param visibility: тип видимости (str, Enum)
         :return: обновленные объект Organization или None
         """
         await self.async_session.execute(
@@ -105,7 +105,7 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
     @log_calls
     async def get_organization_by_id(
             self,
-            org_id: int
+            org_id: int,
     ) -> Organization | None:
         """
         Поиск объекта Organization по его id
@@ -116,7 +116,7 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
             select(
                 Organization
             ).where(
-                Organization.id == org_id
+                Organization.id == org_id,
             )
         )
         return result.scalar_one_or_none()
@@ -164,7 +164,7 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
             delete(
                 Organization
             ).where(
-                Organization.id == org_id
+                Organization.id == org_id,
             )
         )
         await self.async_session.commit()

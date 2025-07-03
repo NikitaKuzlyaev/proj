@@ -1,7 +1,7 @@
 from typing import Sequence, Protocol
 
 from core.models.vacancy import Vacancy
-from core.schemas.project import ProjectVacanciesShortInfoResponse
+from core.schemas.project import ProjectVacanciesFullInfoResponse
 from core.schemas.vacancy import VacancyShortInfoResponse, VacancyCreateResponse, VacancyPatchResponse
 
 
@@ -18,7 +18,7 @@ class IVacancyService(Protocol):
             self,
             project_id: int,
             user_id: int
-    ) -> Sequence[ProjectVacanciesShortInfoResponse]:
+    ) -> Sequence[ProjectVacanciesFullInfoResponse]:
         ...
 
     async def get_vacancy_by_id(

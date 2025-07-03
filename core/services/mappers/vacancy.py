@@ -1,4 +1,8 @@
+from typing import Sequence
+
 from core.models import Vacancy
+from core.schemas.application import ApplicationShortInfo
+from core.schemas.project import ProjectVacanciesFullInfoResponse
 from core.schemas.vacancy import VacancyShortInfoResponse, VacancyActivityStatusType, VacancyVisibilityType, \
     VacancyCreateResponse, VacancyPatchResponse
 from core.utilities.loggers.log_decorator import log_calls
@@ -9,6 +13,24 @@ class VacancyMapper:
             self,
     ):
         return
+
+    @log_calls
+    def update_vacancies_full_info_response_by_active_applications(
+            self,
+            base: Sequence[ProjectVacanciesFullInfoResponse],
+            active_applications: Sequence[ApplicationShortInfo],
+    ) -> Sequence[ProjectVacanciesFullInfoResponse]:
+        ids = set(app.vacancy_id for app in active_applications)
+
+        for app in base:
+            if app.can_user_edit:
+                continue
+            if app.vacancy_id in ids:
+                app.has_user_active_applications = True
+                app.can_user_make_applications = False
+
+
+        return base
 
     @log_calls
     def vacancy_to_short_info_response(
