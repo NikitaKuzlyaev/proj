@@ -42,27 +42,39 @@ class PermissionService(IPermissionService):
 
     @trusted_method
     @log_calls
-    async def user_admin_permission(
+    async def is_user_admin(
             self,
             user_id: int,
-    ) -> AdminPermissionSignature:
+    ) -> bool:
         permission: Permission | None = (
-            await self.permission_repo.user_admin_permission(
+            await self.permission_repo.search_exist_permission(
                 user_id=user_id,
+                resource_type=ResourceType.DOMAIN.value,
+                resource_id=user_id,
+                permission_type=PermissionType.ADMIN.value,
             )
         )
         if not permission:
-            result = AdminPermissionSignature(
-                permission_id=None,
-                sign=False,
-            )
-        else:
-            result = AdminPermissionSignature(
-                permission_id=permission.id,
-                sign=True,
-            )
+            return False
+        return True
 
-        return result
+    @trusted_method
+    @log_calls
+    async def can_user_create_organizations(
+            self,
+            user_id: int,
+    ) -> bool:
+        permission: Permission | None = (
+            await self.permission_repo.search_exist_permission(
+                user_id=user_id,
+                resource_type=ResourceType.DOMAIN.value,
+                resource_id=user_id,
+                permission_type=PermissionType.CREATE_ORGANIZATION.value,
+            )
+        )
+        if not permission:
+            return False
+        return True
 
     @trusted_method
     @log_calls
@@ -94,7 +106,10 @@ class PermissionService(IPermissionService):
                 org_id=org_id,
             )
         )
-        if res and self.org_service.is_org_open_to_view(org=res):
+        if not res:
+            return False
+
+        if self.org_service.is_org_open_to_view(org=res):
             return True
 
         res: OrganizationMember | None = (
@@ -124,15 +139,17 @@ class PermissionService(IPermissionService):
             org_id: int,
             user_id: int,
     ) -> bool:
-        res: bool = (
-            await self.check_permission(
+        permission: Permission | None = (
+            await self.permission_repo.search_exist_permission(
                 user_id=user_id,
-                resource_id=org_id,
                 resource_type=ResourceType.ORGANIZATION.value,
+                resource_id=org_id,
                 permission_type=PermissionType.EDIT_ORGANIZATION.value,
             )
         )
-        return res
+        if not permission:
+            return False
+        return True
 
     @trusted_method
     @log_calls
@@ -161,21 +178,17 @@ class PermissionService(IPermissionService):
             user_id: int,
             vacancy_id: int,
     ) -> bool:
-        """
-        Проверка прав User для редактирования объекта Vacancy
-        :param user_id: id объекта User
-        :param vacancy_id: id объекта Vacancy
-        :return:
-        """
-        res: bool = (
-            await self.check_permission(
+        permission: Permission | None = (
+            await self.permission_repo.search_exist_permission(
                 user_id=user_id,
                 resource_type=ResourceType.VACANCY.value,
-                permission_type=PermissionType.EDIT_VACANCY.value,
                 resource_id=vacancy_id,
+                permission_type=PermissionType.EDIT_VACANCY.value,
             )
         )
-        return res
+        if not permission:
+            return False
+        return True
 
     @trusted_method
     @log_calls
@@ -184,21 +197,17 @@ class PermissionService(IPermissionService):
             user_id: int,
             project_id: int,
     ) -> bool:
-        """
-        Проверка прав User для редактирования объекта Project
-        :param user_id: id объекта User
-        :param project_id: id объекта Project
-        :return: True / False
-        """
-        res: bool = (
-            await self.check_permission(
+        permission: Permission | None = (
+            await self.permission_repo.search_exist_permission(
                 user_id=user_id,
                 resource_type=ResourceType.PROJECT.value,
-                permission_type=PermissionType.EDIT_PROJECT.value,
                 resource_id=project_id,
+                permission_type=PermissionType.EDIT_PROJECT.value,
             )
         )
-        return res
+        if not permission:
+            return False
+        return True
 
     @trusted_method
     @log_calls
@@ -207,19 +216,17 @@ class PermissionService(IPermissionService):
             user_id: int,
             org_id: int,
     ) -> bool:
-        """
-        Проверка прав User для создания Project внутри Organization
-        :param user_id: id объекта User
-        :param org_id: id объекта Organization
-        :return: True / False
-        """
-        res: bool = (
-            await self.permission_repo.can_user_create_projects_inside_organization(
+        permission: Permission | None = (
+            await self.permission_repo.search_exist_permission(
                 user_id=user_id,
-                org_id=org_id,
+                resource_type=ResourceType.ORGANIZATION.value,
+                resource_id=org_id,
+                permission_type=PermissionType.CREATE_PROJECTS_INSIDE_ORGANIZATION.value,
             )
         )
-        return res
+        if not permission:
+            return False
+        return True
 
     @log_calls
     async def allow_user_edit_vacancy(

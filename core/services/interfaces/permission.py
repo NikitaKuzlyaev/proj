@@ -6,6 +6,12 @@ from core.schemas.permission import PermissionsShortResponse
 
 class IPermissionService(Protocol):
 
+    async def can_user_create_organizations(
+            self,
+            user_id: int,
+    ) -> bool:
+        ...
+
     async def can_user_edit_yourself_application(
             self,
             user_id: int,
@@ -20,10 +26,10 @@ class IPermissionService(Protocol):
     ) -> bool:
         ...
 
-    async def user_admin_permission(
+    async def is_user_admin(
             self,
             user_id: int,
-    ) -> AdminPermissionSignature:
+    ) -> bool:
         ...
 
     async def can_user_edit_organization(

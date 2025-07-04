@@ -1,7 +1,7 @@
 from typing import Protocol, Sequence
 
 from core.models.organizationMember import OrganizationMember
-from core.schemas.organization import OrganizationJoinResponse
+from core.schemas.organization import OrganizationJoinResponse, OrganizationMemberId
 from core.schemas.organization_member import OrganizationMemberDetailInfo, \
     OrganizationMemberDeleteResponse
 
@@ -12,7 +12,7 @@ class IOrganizationMemberService(Protocol):
             self,
             user_id: int,
             org_id: int,
-    ) -> OrganizationMemberDeleteResponse:
+    ) -> None:
         ...
 
     async def get_organization_members_for_admin(
@@ -27,7 +27,7 @@ class IOrganizationMemberService(Protocol):
             user_id: int,
             org_id: int,
             code: int | None = None,
-    ) -> OrganizationJoinResponse:
+    ) -> OrganizationMemberId:
         """
         ???
 

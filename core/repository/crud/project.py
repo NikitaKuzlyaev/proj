@@ -36,17 +36,17 @@ class ProjectCRUDRepository(BaseCRUDRepository):
         rows = result.all()
         res = [
             ProjectsInOrganizationShortInfoResponse(
-                id=project.id,
-                name=project.name,
-                short_description=project.short_description,
-                manager=ProjectManagerInfo(
+                project_id=project.id,
+                project_name=project.name,
+                project_short_description=project.short_description,
+                project_manager=ProjectManagerInfo(
                     user_id=user.id,
                     avatar="",
                     name=user.username,
                 ),
-                open_vacancies=open_vacancies,
-                team_current_size=0,
-                team_full_size=0,
+                project_open_vacancies=open_vacancies,
+                project_team_current_size=0,
+                project_team_full_size=0,
             )
             for project, user, open_vacancies in rows
         ]

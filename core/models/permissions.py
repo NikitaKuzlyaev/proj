@@ -11,7 +11,6 @@ from core.database.connection import Base
 class PermissionType(enum.Enum):
     # --- [ORGANIZATION] ---
     EDIT_ORGANIZATION = "EDIT_ORGANIZATION"
-    CREATE_ORGANIZATION = "CREATE_ORGANIZATION"
     DELETE_ORGANIZATION_MEMBERS = "DELETE_ORGANIZATION_MEMBERS"
 
     # --- [PROJECT] ---
@@ -23,6 +22,7 @@ class PermissionType(enum.Enum):
 
     # --- [DOMAIN] ---
     ADMIN = "ADMIN"
+    CREATE_ORGANIZATION = "CREATE_ORGANIZATION"
 
 class ResourceType(enum.Enum):
     ORGANIZATION = "ORGANIZATION"

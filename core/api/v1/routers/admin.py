@@ -27,4 +27,4 @@ async def admin_panel(
         return JSONResponse({'body': res})
 
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=520, detail=str(e))

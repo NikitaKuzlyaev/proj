@@ -7,9 +7,11 @@ from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
 from core.repository.crud.permission import PermissionCRUDRepository
 from core.schemas.organization import OrganizationShortInfoResponse, \
-    OrganizationJoinPolicyType, OrganizationVisibilityType, OrganizationActivityStatusType
+    OrganizationJoinPolicyType, OrganizationVisibilityType, OrganizationActivityStatusType, \
+    OrganizationInfoForEditResponse, OrganizationDetailInfoResponse, OrganizationId
 from core.services.interfaces.organization import IOrganizationService
 from core.services.interfaces.user import IUserService
+from core.services.mappers.organization import OrganizationMapper
 from core.utilities.exceptions.database import EntityDoesNotExist
 from core.utilities.loggers.log_decorator import log_calls
 
@@ -21,11 +23,13 @@ class OrganizationService(IOrganizationService):
             member_repo: OrganizationMemberCRUDRepository,
             permission_repo: PermissionCRUDRepository,
             user_service: IUserService,
+            org_mapper: OrganizationMapper,
     ):
         self.org_repo = org_repo
         self.member_repo = member_repo
         self.permission_repo = permission_repo
         self.user_service = user_service
+        self.org_mapper = org_mapper
 
     def is_org_open_to_view(
             self,
@@ -38,6 +42,52 @@ class OrganizationService(IOrganizationService):
         if org.visibility != OrganizationVisibilityType.OPEN.value:
             return False
         return True
+
+    @log_calls
+    async def get_organization_detail_info_by_id(
+            self,
+            org_id: int,
+    ) -> OrganizationDetailInfoResponse:
+        org: Organization = (
+            await self.get_organization_by_id(
+                org_id=org_id,
+            )
+        )
+        if not org:
+            raise EntityDoesNotExist('Организация не существует')
+
+        org_members: Sequence[OrganizationMember] = (
+            await self.get_organization_members_by_org_id(
+                org_id=org_id,
+            )
+        )
+        res = OrganizationDetailInfoResponse(
+            org_id=org.id,
+            org_name=org.name,
+            org_short_description=org.short_description,
+            org_long_description=org.long_description,
+            org_creator_id=org.creator_id,
+            org_created_at=org.created_at.isoformat(),
+            org_number_of_members=len(org_members),
+        )
+        return res
+
+    @log_calls
+    async def get_organization_info_for_edit(
+            self,
+            org_id: int,
+    ) -> OrganizationInfoForEditResponse:
+
+        org: Organization = (
+            await self.get_organization_by_id(
+                org_id=org_id,
+            )
+        )
+        if not org:
+            raise EntityDoesNotExist('Организация не существует')
+
+        res = self.org_mapper.compile_organization_info_for_edit(org=org)
+        return res
 
     @log_calls
     async def get_all_organizations(
@@ -65,12 +115,12 @@ class OrganizationService(IOrganizationService):
         result = (
             [
                 OrganizationShortInfoResponse(
-                    id=org.id,
-                    name=org.name,
-                    short_description=org.short_description,
-                    creator_id=org.creator_id,
+                    org_id=org.id,
+                    org_name=org.name,
+                    org_short_description=org.short_description,
+                    org_creator_id=org.creator_id,
                     is_user_member=(org.id in user_orgs_id_set),
-                    join_policy=OrganizationJoinPolicyType(org.join_policy),
+                    org_join_policy=OrganizationJoinPolicyType(org.join_policy),
                 ) for org in all_orgs
             ]
         )
@@ -86,8 +136,6 @@ class OrganizationService(IOrganizationService):
                 org_id=org_id,
             )
         )
-        if not org:
-            raise EntityDoesNotExist("Организация с указанным id не существует")
         return org
 
     @log_calls
@@ -97,7 +145,7 @@ class OrganizationService(IOrganizationService):
             name: str,
             short_description: str,
             long_description: str,
-    ) -> Organization:
+    ) -> OrganizationId:
         new_org = (
             await self.org_repo.create_organization(
                 name=name,
@@ -114,12 +162,12 @@ class OrganizationService(IOrganizationService):
             user_id=user_id,
             org_id=new_org.id
         )
-        return new_org
+        res = OrganizationId(org_id=new_org.id)
+        return res
 
     @log_calls
     async def get_organization_members_by_org_id(
             self,
-            user_id: int,
             org_id: int,
     ) -> Sequence[OrganizationMember]:
         org: Organization | None = (
@@ -142,25 +190,25 @@ class OrganizationService(IOrganizationService):
             self,
             user_id: int,
             org_id: int,
-            name: str,
-            short_description: str,
-            long_description: str,
-            visibility: OrganizationVisibilityType,
-            activity_status: OrganizationActivityStatusType,
-            join_policy: OrganizationJoinPolicyType,
-    ) -> Organization | None:
+            org_name: str,
+            org_short_description: str,
+            org_long_description: str,
+            org_visibility: OrganizationVisibilityType,
+            org_activity_status: OrganizationActivityStatusType,
+            org_join_policy: OrganizationJoinPolicyType,
+    ) -> OrganizationId:
         org: Organization | None = (
             await self.org_repo.patch_organization_by_id(
                 org_id=org_id,
-                name=name,
-                short_description=short_description,
-                long_description=long_description,
-                visibility=visibility.value,
-                activity_status=activity_status.value,
-                join_policy=join_policy.value,
+                name=org_name,
+                short_description=org_short_description,
+                long_description=org_long_description,
+                visibility=org_visibility.value,
+                activity_status=org_activity_status.value,
+                join_policy=org_join_policy.value,
             )
         )
         if not org:
             raise EntityDoesNotExist("Организация с указанным id не существует")
-
-        return org
+        res = OrganizationId(org_id=org_id)
+        return res

@@ -74,14 +74,12 @@ async def can_user_edit_project(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 @router.post("/is-user-allowed-to-edit-organization")
 async def can_user_edit_organization(
         params: dict = Body(...),
         user: User = Depends(get_user),
         permission_service: IPermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
-
     org_id = params.get("org_id")
     if not org_id:
         raise HTTPException(status_code=400, detail="Missing required parameter 'org_id'")
@@ -91,6 +89,22 @@ async def can_user_edit_organization(
             await permission_service.can_user_edit_organization(
                 user_id=user.id,
                 org_id=org_id,
+            )
+        )
+        return JSONResponse({'body': result})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/is-user-allowed-to-create-organizations")
+async def can_user_edit_organization(
+        user: User = Depends(get_user),
+        permission_service: IPermissionService = Depends(get_permission_service),
+) -> JSONResponse:
+    try:
+        result: bool = (
+            await permission_service.can_user_create_organizations(
+                user_id=user.id,
             )
         )
         return JSONResponse({'body': result})

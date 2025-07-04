@@ -4,13 +4,14 @@ from core.repository.crud.permission import PermissionCRUDRepository
 from core.repository.crud.project import ProjectCRUDRepository
 from core.repository.crud.user import UserCRUDRepository
 from core.schemas.admin import AdminPermissionSignature
+from core.services.interfaces.admin import IAdminService
 from core.services.interfaces.permission import IPermissionService
 from core.services.interfaces.user import IUserService
 from core.services.mappers.project import ProjectMapper
 from core.utilities.loggers.log_decorator import log_calls
 
 
-class AdminService:
+class AdminService(IAdminService):
     def __init__(
             self,
             org_repo: OrganizationCRUDRepository,

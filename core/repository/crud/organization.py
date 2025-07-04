@@ -3,7 +3,7 @@ from typing import Sequence
 from sqlalchemy import select, update, delete
 
 from core.dependencies.repository import get_repository
-from core.models import OrganizationMember, Permission
+from core.models import OrganizationMember, Permission, Application
 from core.models.organization import Organization
 from core.models.permissions import ResourceType
 from core.repository.crud.base import BaseCRUDRepository
@@ -82,6 +82,13 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
                 Permission.user_id == member.user_id,
                 Permission.resource_type == ResourceType.ORGANIZATION.value,
                 Permission.resource_id == member.organization_id,
+            )
+        )
+        await self.async_session.execute(
+            delete(
+                Application
+            ).where(
+                Application.user_id == member.user_id,
             )
         )
         await self.async_session.commit()

@@ -90,10 +90,10 @@ class ProjectsInOrganizationRequest(BaseSchemaModel):
 
 
 class ProjectsInOrganizationShortInfoResponse(BaseSchemaModel):
-    id: int
-    name: str
-    short_description: Optional[str] = None
-    manager: ProjectManagerInfo
-    open_vacancies: Optional[int] = Field(default=0)
-    team_current_size: Optional[int] = Field(default=0)
-    team_full_size: Optional[int] = Field(default=0)
+    project_id: int
+    project_name: str
+    project_short_description: Optional[str] = None
+    project_manager: ProjectManagerInfo
+    project_open_vacancies: Optional[int] = Field(default=0)
+    project_team_current_size: Optional[int] = Field(default=0)
+    project_team_full_size: Optional[int] = Field(default=0)

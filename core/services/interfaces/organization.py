@@ -4,7 +4,8 @@ from typing import Sequence
 from core.models import Organization
 from core.models.organizationMember import OrganizationMember
 from core.schemas.organization import OrganizationShortInfoResponse, \
-    OrganizationJoinPolicyType, OrganizationVisibilityType, OrganizationActivityStatusType
+    OrganizationJoinPolicyType, OrganizationVisibilityType, OrganizationActivityStatusType, \
+    OrganizationInfoForEditResponse, OrganizationDetailInfoResponse, OrganizationId
 
 
 class IOrganizationService(Protocol):
@@ -13,6 +14,18 @@ class IOrganizationService(Protocol):
             self,
             org: Organization,
     ) -> bool:
+        ...
+
+    async def get_organization_detail_info_by_id(
+            self,
+            org_id: int,
+    ) -> OrganizationDetailInfoResponse:
+        ...
+
+    async def get_organization_info_for_edit(
+            self,
+            org_id: int,
+    ) -> OrganizationInfoForEditResponse:
         ...
 
     async def get_all_organizations(
@@ -45,7 +58,7 @@ class IOrganizationService(Protocol):
     async def get_organization_by_id(
             self,
             org_id: int,
-    ) -> Organization:
+    ) -> Organization | None:
         """
         Получает объект организации по ее id
 
@@ -63,7 +76,7 @@ class IOrganizationService(Protocol):
             name: str,
             short_description: str,
             long_description: str,
-    ) -> Organization:
+    ) -> OrganizationId:
         """
         Создание нового объекта организации от лица пользователя
 
@@ -74,20 +87,18 @@ class IOrganizationService(Protocol):
             long_description: длинное описание организации
 
         Returns:
-            Organization: Объект Organization
+            OrganizationId: id созданного объекта Organization
         """
         ...
 
     async def get_organization_members_by_org_id(
             self,
-            user_id: int,
             org_id: int,
     ) -> Sequence[OrganizationMember]:
         """
         Получение участников организации
 
         Args:
-            user_id: id пользователя совершающего запрос
             org_id: id организации
 
         Returns:
@@ -99,25 +110,25 @@ class IOrganizationService(Protocol):
             self,
             user_id: int,
             org_id: int,
-            name: str,
-            short_description: str,
-            long_description: str,
-            visibility: OrganizationVisibilityType,
-            activity_status: OrganizationActivityStatusType,
-            join_policy: OrganizationJoinPolicyType,
-    ) -> Organization | None:
+            org_name: str,
+            org_short_description: str,
+            org_long_description: str,
+            org_visibility: OrganizationVisibilityType,
+            org_activity_status: OrganizationActivityStatusType,
+            org_join_policy: OrganizationJoinPolicyType,
+    ) -> OrganizationId:
         """
         Обновление существующей организации от лица пользователя
 
         Args:
             user_id: id пользователя совершающего запрос
             org_id: id организации
-            name: название
-            short_description: короткое описание
-            long_description: длинное описание
-            visibility: тип видимости
-            activity_status: тип активности
-            join_policy: тип политики вступления в организацию
+            org_name: название
+            org_short_description: короткое описание
+            org_long_description: длинное описание
+            org_visibility: тип видимости
+            org_activity_status: тип активности
+            org_join_policy: тип политики вступления в организацию
 
         Returns:
             Organization: Обновленный объект организации

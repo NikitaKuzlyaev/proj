@@ -43,6 +43,13 @@ class ProjectService(IProjectService):
             user_id: int,
             org_id:int,
     ) -> Sequence[ProjectsInOrganizationShortInfoResponse]:
+        org: Organization = (
+            await self.org_repo.get_organization_by_id(
+                org_id=org_id,
+            )
+        )
+        if not org:
+            raise EntityDoesNotExist('Организация не существует')
 
         res: Sequence[ProjectsInOrganizationShortInfoResponse] = (
             await self.project_repo.get_projects_short_info_in_organization(

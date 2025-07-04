@@ -5,7 +5,7 @@ from core.models.organizationMember import OrganizationMember
 from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.organizationMember import OrganizationMemberCRUDRepository
 from core.repository.crud.permission import PermissionCRUDRepository
-from core.schemas.organization import OrganizationJoinResponse, OrganizationJoinPolicyType
+from core.schemas.organization import OrganizationJoinResponse, OrganizationJoinPolicyType, OrganizationMemberId
 from core.schemas.organization_member import OrganizationMemberDetailInfo, \
     OrganizationMemberDeleteResponse
 from core.services.interfaces.organization import IOrganizationService
@@ -36,7 +36,7 @@ class OrganizationMemberService(IOrganizationMemberService):
             self,
             user_id: int,
             org_id: int,
-    ) -> OrganizationMemberDeleteResponse:
+    ) -> None:
         member: OrganizationMember = (
             await self.member_repo.get_organization_member_by_user_and_org(
                 org_id=org_id,
@@ -44,18 +44,10 @@ class OrganizationMemberService(IOrganizationMemberService):
             )
         )
         if not member:
-            res = OrganizationMemberDeleteResponse(
-                success=False,
-                message="Entity not found",
-            )
-            return res
+            return
 
         await self.org_repo.delete_user_from_organization(member=member)
-        res = OrganizationMemberDeleteResponse(
-            success=True,
-            message="",
-        )
-        return res
+
 
     @log_calls
     async def get_organization_members_for_admin(
@@ -102,7 +94,7 @@ class OrganizationMemberService(IOrganizationMemberService):
             user_id: int,
             org_id: int,
             code: int | None = None,
-    ) -> OrganizationJoinResponse:
+    ) -> OrganizationMemberId:
         org: Organization | None = (
             await self.org_repo.get_organization_by_id(
                 org_id=org_id,
@@ -133,7 +125,7 @@ class OrganizationMemberService(IOrganizationMemberService):
                 org_id=org_id,
             )
         )
-        res = OrganizationJoinResponse(
+        res = OrganizationMemberId(
             member_id=org_member.id,
         )
         return res
