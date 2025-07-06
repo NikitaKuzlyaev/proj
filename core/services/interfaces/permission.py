@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Protocol, Callable, Coroutine, Awaitable
 
 from starlette.responses import JSONResponse
 
@@ -8,11 +8,23 @@ from core.schemas.permission import PermissionsShortResponse
 
 class IPermissionService(Protocol):
 
-    async def can_user_see_project(
+    async def check_all(
             self,
-            user_id: int,
-            project_id: int,
+            permissions: list[Callable[[], Awaitable[bool]]],
     ) -> bool:
+        ...
+
+    # async def can_user_see_project(
+    #         self,
+    #         user_id: int,
+    #         project_id: int,
+    # ) -> bool:
+    #     ...
+
+    async def raise_if_not_all(
+            self,
+            permissions: list[Callable[[], Awaitable[bool]]],
+    ) -> None:
         ...
 
     async def can_user_create_organizations(

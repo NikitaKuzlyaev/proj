@@ -37,6 +37,7 @@ router = fastapi.APIRouter(prefix="/org", tags=["organization"])
 )
 @async_http_exception_mapper(
     mapping={
+        PermissionDenied: (403, None),
         EntityDoesNotExist: (404, None),
     }
 )
@@ -48,9 +49,13 @@ async def get_organization_members_for_admin(
 ) -> JSONResponse:
     org_id = params.org_id
 
-    # Пользователь должен обладать правами на редактирование организации
-    flag = await permission_service.can_user_edit_organization(user_id=user.id, org_id=org_id)
-    if not flag: raise HTTPException(status_code=403, detail="Permission denied")
+    await permission_service.raise_if_not_all([
+        lambda: permission_service.can_user_edit_organization(user_id=user.id, org_id=org_id),
+    ])
+
+    # # Пользователь должен обладать правами на редактирование организации
+    # flag = await permission_service.can_user_edit_organization(user_id=user.id, org_id=org_id)
+    # if not flag: raise HTTPException(status_code=403, detail="Permission denied")
 
     result: Sequence[OrganizationMemberDetailInfo] = (
         await org_member_service.get_organization_members_for_admin(
@@ -68,7 +73,9 @@ async def get_organization_members_for_admin(
     status_code=204,
 )
 @async_http_exception_mapper(
-
+    mapping={
+        PermissionDenied: (403, None),
+    }
 )
 async def delete_organization_member_by_manager(
         params: OrganizationAndUserId = Body(...),
@@ -79,9 +86,13 @@ async def delete_organization_member_by_manager(
     org_id = params.org_id
     user_id = params.user_id
 
-    # Пользователь должен обладать правами на редактирование организации
-    flag = await permission_service.can_user_edit_organization(user_id=user.id, org_id=org_id)
-    if not flag: raise HTTPException(status_code=403, detail="Permission denied")
+    await permission_service.raise_if_not_all([
+        lambda: permission_service.can_user_edit_organization(user_id=user.id, org_id=org_id),
+    ])
+
+    # # Пользователь должен обладать правами на редактирование организации
+    # flag = await permission_service.can_user_edit_organization(user_id=user.id, org_id=org_id)
+    # if not flag: raise HTTPException(status_code=403, detail="Permission denied")
 
     await org_member_service.delete_organization_member(
         user_id=user_id,
@@ -149,6 +160,7 @@ async def get_all_organizations_short_info(
 )
 @async_http_exception_mapper(
     mapping={
+        PermissionDenied: (403, None),
         EntityDoesNotExist: (404, None),
     }
 )
@@ -158,9 +170,13 @@ async def get_organization_info_for_edit_by_id(
         organization_service: IOrganizationService = Depends(get_organization_service),
         permission_service: IPermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
-    # Пользователь должен обладать правами на редактирование организации
-    flag = await permission_service.can_user_edit_organization(user_id=user.id, org_id=org_id)
-    if not flag: raise HTTPException(status_code=403, detail="Permission denied")
+    await permission_service.raise_if_not_all([
+        lambda: permission_service.can_user_edit_organization(user_id=user.id, org_id=org_id),
+    ])
+
+    # # Пользователь должен обладать правами на редактирование организации
+    # flag = await permission_service.can_user_edit_organization(user_id=user.id, org_id=org_id)
+    # if not flag: raise HTTPException(status_code=403, detail="Permission denied")
 
     result: OrganizationInfoForEditResponse = (
         await organization_service.get_organization_info_for_edit(
@@ -179,6 +195,7 @@ async def get_organization_info_for_edit_by_id(
 )
 @async_http_exception_mapper(
     mapping={
+        PermissionDenied: (403, None),
         EntityDoesNotExist: (404, None),
     }
 )
@@ -189,10 +206,14 @@ async def get_organization_detail_info_by_id(
         permission_service: IPermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     # Пользователь должен обладать правами на просмотр организации
-    flag = await permission_service.can_user_see_organization_detail(user_id=user.id, org_id=org_id)
-    if not flag:
-        logger.warning(f"User {user.id} tried to access organization {org_id} without permission")
-        raise HTTPException(status_code=403, detail="Not allowed")
+    await permission_service.raise_if_not_all([
+        lambda: permission_service.can_user_see_organization_detail(user_id=user.id, org_id=org_id),
+    ])
+
+    # flag = await permission_service.can_user_see_organization_detail(user_id=user.id, org_id=org_id)
+    # if not flag:
+    #     logger.warning(f"User {user.id} tried to access organization {org_id} without permission")
+    #     raise HTTPException(status_code=403, detail="Not allowed")
 
     result: OrganizationDetailInfoResponse = (
         await organization_service.get_organization_detail_info_by_id(
@@ -210,7 +231,9 @@ async def get_organization_detail_info_by_id(
     status_code=201,
 )
 @async_http_exception_mapper(
-
+    mapping={
+        PermissionDenied: (403, None),
+    }
 )
 async def create_organization(
         params: OrganizationCreateInRequest = Body(...),
@@ -219,8 +242,12 @@ async def create_organization(
         permission_service: IPermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     # Пользователь должен обладать правами на создание организаций
-    flag = await permission_service.can_user_create_organizations(user_id=user.id)
-    if not flag: raise HTTPException(status_code=403, detail="Not allowed")
+    await permission_service.raise_if_not_all([
+        lambda: permission_service.can_user_create_organizations(user_id=user.id),
+    ])
+
+    # flag = await permission_service.can_user_create_organizations(user_id=user.id)
+    # if not flag: raise HTTPException(status_code=403, detail="Not allowed")
 
     result: OrganizationId = (
         await organization_service.create_organization(
@@ -240,6 +267,7 @@ async def create_organization(
 )
 @async_http_exception_mapper(
     mapping={
+        PermissionDenied: (403, None),
         EntityDoesNotExist: (404, None),
     }
 )
@@ -250,8 +278,12 @@ async def patch_organization(
         permission_service: IPermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     # Пользователь должен иметь права на редактирование организации
-    flag = await permission_service.can_user_edit_organization(user_id=user.id, org_id=params.org_id)
-    if not flag: raise HTTPException(status_code=403, detail="Not allowed")
+    await permission_service.raise_if_not_all([
+        lambda: permission_service.can_user_edit_organization(user_id=user.id, org_id=params.org_id),
+    ])
+
+    # flag = await permission_service.can_user_edit_organization(user_id=user.id, org_id=params.org_id)
+    # if not flag: raise HTTPException(status_code=403, detail="Not allowed")
 
     result: OrganizationId = (
         await organization_service.patch_organization_by_id(
@@ -271,6 +303,7 @@ async def patch_organization(
 )
 @async_http_exception_mapper(
     mapping={
+        PermissionDenied: (403, None),
         EntityDoesNotExist: (404, None),
     }
 )
@@ -281,8 +314,12 @@ async def get_organization_projects_short_info(
         permission_service: IPermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
     # Пользователь должен обладать правами на просмотр организации
-    flag = await permission_service.can_user_see_organization_detail(user_id=user.id, org_id=org_id)
-    if not flag: raise HTTPException(status_code=403, detail="Not allowed")
+    await permission_service.raise_if_not_all([
+        lambda: permission_service.can_user_see_organization_detail(user_id=user.id, org_id=org_id),
+    ])
+
+    # flag = await permission_service.can_user_see_organization_detail(user_id=user.id, org_id=org_id)
+    # if not flag: raise HTTPException(status_code=403, detail="Not allowed")
 
     result: Sequence[ProjectsInOrganizationShortInfoResponse] = (
         await project_service.get_projects_short_info_in_organization(

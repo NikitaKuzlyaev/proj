@@ -1,4 +1,4 @@
-from typing import cast
+from typing import cast, Callable, Awaitable
 
 from core.models import Permission, User, Vacancy, Organization, OrganizationMember, Application, Project
 from core.models.permissions import ResourceType, PermissionType
@@ -17,6 +17,7 @@ from core.services.interfaces.organization import IOrganizationService
 from core.services.interfaces.permission import IPermissionService
 from core.services.mappers.permission import PermissionMapper
 from core.utilities.exceptions.database import EntityDoesNotExist
+from core.utilities.exceptions.permission import PermissionDenied
 from core.utilities.loggers.log_decorator import log_calls
 from core.utilities.methods.trusted_method import trusted_method
 
@@ -61,6 +62,28 @@ class PermissionService(IPermissionService):
         if not permission:
             return False
         return True
+
+    # @log_calls
+    # async def check_all(
+    #         self,
+    #         permissions: list[Callable[[], Awaitable[bool]]],
+    # ) -> bool:
+    #     for permission in permissions:
+    #         result = await permission()
+    #         if not result:
+    #             return False
+    #     return True
+
+    @log_calls
+    async def raise_if_not_all(
+            self,
+            permissions: list[Callable[[], Awaitable[bool]]],
+    ) -> None:
+        for permission in permissions:
+            result = await permission()
+            if not result:
+                raise PermissionDenied('Permission denied')
+
 
     @log_calls
     async def can_user_see_project(
