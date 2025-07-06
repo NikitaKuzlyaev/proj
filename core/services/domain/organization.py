@@ -61,6 +61,7 @@ class OrganizationService(IOrganizationService):
                 org_id=org_id,
             )
         )
+
         res = OrganizationDetailInfoResponse(
             org_id=org.id,
             org_name=org.name,

@@ -19,7 +19,10 @@ from core.utilities.exceptions.auth import UnauthorizedException, TokenException
 router = fastapi.APIRouter(prefix="/auth", tags=["authentication"])
 
 
-@router.post("/register", response_model=UserOut)
+@router.post(
+    path="/register",
+    response_model=UserOut,
+)
 async def register(
         data: UserCreate,
         user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
@@ -33,9 +36,11 @@ async def register(
     return user
 
 
-@router.post("/login",
-             response_model=Token,
-             status_code=200)
+@router.post(
+    path="/login",
+    response_model=Token,
+    status_code=200,
+)
 async def login_for_access_token(
         response: Response,
         form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -82,7 +87,9 @@ async def login_for_access_token(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/refresh")
+@router.post(
+    path="/refresh",
+)
 async def refresh_access_token(
         request: Request,
         user_repo: UserCRUDRepository = Depends(get_repository(UserCRUDRepository)),
@@ -103,24 +110,3 @@ async def refresh_access_token(
 
     new_access_token = create_access_token(data={"sub": user.username})
     return {"access_token": new_access_token, "token_type": "bearer"}
-
-
-"""
-    try:
-        payload = decode_token(token=token)
-        username: str = payload.get("sub")
-
-        if username is None:
-            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-
-        user = await auth_service.get_user_by_username(username=username, user_repo=user_repo)
-        if user is None:
-            raise HTTPException(status_code=401, detail="User not found")
-
-        return user
-
-    except JWTError as e:
-        raise HTTPException(status_code=401, detail="Could not validate credentials")
-
-
-"""

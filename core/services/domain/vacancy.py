@@ -14,6 +14,7 @@ from core.services.interfaces.permission import IPermissionService
 from core.services.interfaces.vacancy import IVacancyService
 from core.services.mappers.vacancy import VacancyMapper
 from core.utilities.exceptions.database import EntityDoesNotExist
+from core.utilities.exceptions.permission import PermissionDenied
 
 
 class VacancyService(IVacancyService):
@@ -86,6 +87,9 @@ class VacancyService(IVacancyService):
                 vacancy_id=vacancy_id,
             )
         )
+        if not vacancy:
+            raise EntityDoesNotExist('Вакансия не существует')
+
         res: VacancyShortInfoResponse = (
             self.vacancy_mapper.vacancy_to_short_info_response(
                 vacancy=vacancy,
@@ -143,14 +147,14 @@ class VacancyService(IVacancyService):
             visibility: str,
             activity_status: str,
     ) -> VacancyPatchResponse:
-        if not all([
+        if not all([  # Здесь эта проверка не нужна!!! переместить в другой слой
             await self.permission_service.can_user_edit_vacancy(
                 user_id=user_id,
                 vacancy_id=vacancy_id,
             ),
 
         ]):
-            raise HTTPException(status_code=403, detail="Permission denied")
+            raise PermissionDenied("Permission denied")
 
         project: Project = (
             await self.project_repo.get_project_by_id(
@@ -158,7 +162,7 @@ class VacancyService(IVacancyService):
             )
         )
         if not project:
-            raise Exception("Project not found")
+            raise EntityDoesNotExist("Project not found")
 
         try:
             vacancy: Vacancy = (
@@ -172,7 +176,7 @@ class VacancyService(IVacancyService):
                 )
             )
             if not vacancy:
-                raise HTTPException(status_code=400, detail="???")
+                raise EntityDoesNotExist("Вакансии не существует")
 
             res: VacancyPatchResponse = (
                 self.vacancy_mapper.vacancy_to_patch_response(
@@ -182,5 +186,3 @@ class VacancyService(IVacancyService):
             return res
         except Exception as e:
             raise e
-
-

@@ -23,14 +23,23 @@ from core.services.providers.organization_member import get_organization_member_
 from core.services.providers.permission import get_permission_service
 from core.services.providers.project import get_project_service
 from core.utilities.exceptions.database import EntityDoesNotExist, EntityAlreadyExists
+from core.utilities.exceptions.handlers.http400 import async_http_exception_mapper
 from core.utilities.exceptions.permission import PermissionDenied
+from core.utilities.loggers.logger import logger
 
 router = fastapi.APIRouter(prefix="/org", tags=["organization"])
 
 
-@router.post("/admin/members",
-             response_model=Sequence[OrganizationMemberDetailInfo],
-             status_code=200)
+@router.post(
+    path="/admin/members",
+    response_model=Sequence[OrganizationMemberDetailInfo],
+    status_code=200,
+)
+@async_http_exception_mapper(
+    mapping={
+        EntityDoesNotExist: (404, None),
+    }
+)
 async def get_organization_members_for_admin(
         params: OrganizationId = Body(...),
         user: User = Depends(get_user),
@@ -43,25 +52,24 @@ async def get_organization_members_for_admin(
     flag = await permission_service.can_user_edit_organization(user_id=user.id, org_id=org_id)
     if not flag: raise HTTPException(status_code=403, detail="Permission denied")
 
-    try:
-        result: Sequence[OrganizationMemberDetailInfo] = (
-            await org_member_service.get_organization_members_for_admin(
-                user_id=user.id,
-                org_id=org_id,
-            )
+    result: Sequence[OrganizationMemberDetailInfo] = (
+        await org_member_service.get_organization_members_for_admin(
+            user_id=user.id,
+            org_id=org_id,
         )
-        result = [i.model_dump() for i in result]
+    )
+    result = [i.model_dump() for i in result]
 
-        return JSONResponse({'body': result})
-
-    except EntityDoesNotExist as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=520, detail=str(e))
+    return JSONResponse({'body': result})
 
 
-@router.delete("/admin/members",
-               status_code=204)
+@router.delete(
+    path="/admin/members",
+    status_code=204,
+)
+@async_http_exception_mapper(
+
+)
 async def delete_organization_member_by_manager(
         params: OrganizationAndUserId = Body(...),
         user: User = Depends(get_user),
@@ -75,72 +83,75 @@ async def delete_organization_member_by_manager(
     flag = await permission_service.can_user_edit_organization(user_id=user.id, org_id=org_id)
     if not flag: raise HTTPException(status_code=403, detail="Permission denied")
 
-    try:
-        await org_member_service.delete_organization_member(
-            user_id=user_id,
-            org_id=org_id,
-        )
+    await org_member_service.delete_organization_member(
+        user_id=user_id,
+        org_id=org_id,
+    )
 
-        return Response(status_code=204)
-
-    except Exception as e:
-        raise HTTPException(status_code=520, detail=str(e))
+    return Response(status_code=204)
 
 
-@router.post("/join",
-             response_model=OrganizationMemberId,
-             status_code=201)
+@router.post(
+    path="/join",
+    response_model=OrganizationMemberId,
+    status_code=201,
+)
+@async_http_exception_mapper(
+    mapping={
+        PermissionDenied: (403, None),
+        EntityDoesNotExist: (404, None),
+        EntityAlreadyExists: (409, None),
+    }
+)
 async def join_organization(
         params: OrganizationJoinRequest = Body(...),
         user: User = Depends(get_user),
         org_member_service: IOrganizationMemberService = Depends(get_organization_member_service),
 ) -> JSONResponse:
-    try:
-        result: OrganizationMemberId = (
-            await org_member_service.join_organization(
-                user_id=user.id,
-                org_id=params.org_id,
-                code=params.code,
-            )
+    result: OrganizationMemberId = (
+        await org_member_service.join_organization(
+            user_id=user.id,
+            org_id=params.org_id,
+            code=params.code,
         )
-        result = result.model_dump()
+    )
+    result = result.model_dump()
 
-        return JSONResponse({'body': result})
-
-    except PermissionDenied:
-        raise HTTPException(status_code=403, detail="Permission denied")
-    except EntityDoesNotExist as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except EntityAlreadyExists as e:
-        raise HTTPException(status_code=409, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=520, detail=str(e))
+    return JSONResponse({'body': result})
 
 
-@router.get("/short-info",
-            response_model=Sequence[OrganizationShortInfoResponse],
-            status_code=200)
+@router.get(
+    path="/short-info",
+    response_model=Sequence[OrganizationShortInfoResponse],
+    status_code=200,
+)
+@async_http_exception_mapper(
+
+)
 async def get_all_organizations_short_info(
         user: User = Depends(get_user),
         organization_service: IOrganizationService = Depends(get_organization_service),
 ) -> JSONResponse:
-    try:
-        result: Sequence[OrganizationShortInfoResponse] = (
-            await organization_service.get_all_organizations_with_short_info(
-                user_id=user.id,
-            )
+    result: Sequence[OrganizationShortInfoResponse] = (
+        await organization_service.get_all_organizations_with_short_info(
+            user_id=user.id,
         )
-        result = [i.model_dump() for i in result]
+    )
+    result = [i.model_dump() for i in result]
 
-        return JSONResponse({'body': result})
-
-    except Exception as e:
-        raise HTTPException(status_code=520, detail=str(e))
+    return JSONResponse({'body': result})
 
 
-@router.get("/info-for-edit",
-            response_model=OrganizationInfoForEditResponse,
-            status_code=200)
+@router.get(
+    path="/info-for-edit",
+    response_model=OrganizationInfoForEditResponse,
+    status_code=200,
+)
+@async_http_exception_mapper(
+    mapping={
+        EntityDoesNotExist: (404, None),
+    }
+)
 async def get_organization_info_for_edit_by_id(
         org_id: int = Query(..., ),
         user: User = Depends(get_user),
@@ -151,25 +162,26 @@ async def get_organization_info_for_edit_by_id(
     flag = await permission_service.can_user_edit_organization(user_id=user.id, org_id=org_id)
     if not flag: raise HTTPException(status_code=403, detail="Permission denied")
 
-    try:
-        result: OrganizationInfoForEditResponse = (
-            await organization_service.get_organization_info_for_edit(
-                org_id=org_id,
-            )
+    result: OrganizationInfoForEditResponse = (
+        await organization_service.get_organization_info_for_edit(
+            org_id=org_id,
         )
-        result = result.model_dump()
+    )
+    result = result.model_dump()
 
-        return JSONResponse({'body': result})
-
-    except EntityDoesNotExist as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=520, detail=str(e))
+    return JSONResponse({'body': result})
 
 
-@router.get("/detail",
-            response_model=OrganizationDetailInfoResponse,
-            status_code=200)
+@router.get(
+    path="/detail",
+    response_model=OrganizationDetailInfoResponse,
+    status_code=200,
+)
+@async_http_exception_mapper(
+    mapping={
+        EntityDoesNotExist: (404, None),
+    }
+)
 async def get_organization_detail_info_by_id(
         org_id: int = Query(..., ),
         user: User = Depends(get_user),
@@ -178,27 +190,28 @@ async def get_organization_detail_info_by_id(
 ) -> JSONResponse:
     # Пользователь должен обладать правами на просмотр организации
     flag = await permission_service.can_user_see_organization_detail(user_id=user.id, org_id=org_id)
-    if not flag: raise HTTPException(status_code=403, detail="Not allowed")
+    if not flag:
+        logger.warning(f"User {user.id} tried to access organization {org_id} without permission")
+        raise HTTPException(status_code=403, detail="Not allowed")
 
-    try:
-        result: OrganizationDetailInfoResponse = (
-            await organization_service.get_organization_detail_info_by_id(
-                org_id=org_id,
-            )
+    result: OrganizationDetailInfoResponse = (
+        await organization_service.get_organization_detail_info_by_id(
+            org_id=org_id,
         )
-        result = result.model_dump()
+    )
+    result = result.model_dump()
 
-        return JSONResponse({'body': result})
-
-    except EntityDoesNotExist as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=520, detail=str(e))
+    return JSONResponse({'body': result})
 
 
-@router.post("/",
-             response_model=OrganizationId,
-             status_code=201)
+@router.post(
+    path="/",
+    response_model=OrganizationId,
+    status_code=201,
+)
+@async_http_exception_mapper(
+
+)
 async def create_organization(
         params: OrganizationCreateInRequest = Body(...),
         user: User = Depends(get_user),
@@ -209,24 +222,27 @@ async def create_organization(
     flag = await permission_service.can_user_create_organizations(user_id=user.id)
     if not flag: raise HTTPException(status_code=403, detail="Not allowed")
 
-    try:
-        result: OrganizationId = (
-            await organization_service.create_organization(
-                user_id=user.id,
-                **params.model_dump(),
-            )
+    result: OrganizationId = (
+        await organization_service.create_organization(
+            user_id=user.id,
+            **params.model_dump(),
         )
-        result = result.model_dump()
+    )
+    result = result.model_dump()
 
-        return JSONResponse({'body': result})
-
-    except Exception as e:
-        raise HTTPException(status_code=520, detail=str(e))
+    return JSONResponse({'body': result})
 
 
-@router.patch("/",
-              response_model=OrganizationId,
-              status_code=200)
+@router.patch(
+    path="/",
+    response_model=OrganizationId,
+    status_code=200,
+)
+@async_http_exception_mapper(
+    mapping={
+        EntityDoesNotExist: (404, None),
+    }
+)
 async def patch_organization(
         params: OrganizationInPatch = Body(..., ),
         user: User = Depends(get_user),
@@ -237,26 +253,27 @@ async def patch_organization(
     flag = await permission_service.can_user_edit_organization(user_id=user.id, org_id=params.org_id)
     if not flag: raise HTTPException(status_code=403, detail="Not allowed")
 
-    try:
-        result: OrganizationId = (
-            await organization_service.patch_organization_by_id(
-                user_id=user.id,
-                **params.model_dump(),
-            )
+    result: OrganizationId = (
+        await organization_service.patch_organization_by_id(
+            user_id=user.id,
+            **params.model_dump(),
         )
-        result = result.model_dump()
+    )
+    result = result.model_dump()
 
-        return JSONResponse({"body": result})
-
-    except EntityDoesNotExist as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=520, detail=str(e))
+    return JSONResponse({"body": result})
 
 
-@router.get("/projects-short-info",
-            response_model=Sequence[ProjectsInOrganizationShortInfoResponse],
-            status_code=200)
+@router.get(
+    path="/projects-short-info",
+    response_model=Sequence[ProjectsInOrganizationShortInfoResponse],
+    status_code=200,
+)
+@async_http_exception_mapper(
+    mapping={
+        EntityDoesNotExist: (404, None),
+    }
+)
 async def get_organization_projects_short_info(
         org_id: int = Query(),
         user: User = Depends(get_user),
@@ -267,18 +284,12 @@ async def get_organization_projects_short_info(
     flag = await permission_service.can_user_see_organization_detail(user_id=user.id, org_id=org_id)
     if not flag: raise HTTPException(status_code=403, detail="Not allowed")
 
-    try:
-        result: Sequence[ProjectsInOrganizationShortInfoResponse] = (
-            await project_service.get_projects_short_info_in_organization(
-                user_id=user.id,
-                org_id=org_id,
-            )
+    result: Sequence[ProjectsInOrganizationShortInfoResponse] = (
+        await project_service.get_projects_short_info_in_organization(
+            user_id=user.id,
+            org_id=org_id,
         )
-        result = [i.model_dump() for i in result]
+    )
+    result = [i.model_dump() for i in result]
 
-        return JSONResponse({"body": result})
-
-    except EntityDoesNotExist as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=520, detail=str(e))
+    return JSONResponse({"body": result})
