@@ -26,3 +26,8 @@ class UndecodedToken(TokenException):
     """
 
     """
+
+class UnauthorizedException(Exception):
+    """
+
+    """

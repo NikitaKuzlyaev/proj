@@ -55,7 +55,6 @@ class UserCRUDRepository(BaseCRUDRepository):
                 )
             )
         )
-
         if not user or not verify_password(password, user.hashed_password):
             raise TokenException("Invalid credentials")
 
@@ -65,9 +64,9 @@ class UserCRUDRepository(BaseCRUDRepository):
     async def get_user_by_username(
             self,
             username: str,
-    ):
-        user = (
-            await self.async_session.scalar(
+    ) -> User | None:
+        res = (
+            await self.async_session.execute(
                 select(
                     User
                 ).where(
@@ -75,10 +74,7 @@ class UserCRUDRepository(BaseCRUDRepository):
                 )
             )
         )
-
-        if not user:
-            raise EntityDoesNotExist("")
-
+        user = res.scalar_one_or_none()
         return user
 
     @log_calls
