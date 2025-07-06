@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Any
 
 from core.models import Project, Organization
 from core.models.application import Application
@@ -8,12 +8,23 @@ from core.repository.crud.organization import OrganizationCRUDRepository
 from core.repository.crud.project import ProjectCRUDRepository
 from core.repository.crud.vacancy import VacancyCRUDRepository
 from core.schemas.application import ApplicationShortInfo, ApplicationActivityStatusType, ApplicationMainInfo, \
-    ApplicationId
+    ApplicationId, ApplicationLimits
 from core.services.interfaces.application import IApplicationService
 from core.services.interfaces.permission import IPermissionService
 from core.utilities.exceptions.database import EntityDoesNotExist, EntityAlreadyExists
+from core.utilities.exceptions.domain import ActiveEntityLimit
 from core.utilities.loggers.log_decorator import log_calls
 
+"""
+SETTINGS
+Убрать потом и сделать по нормальному
+"""
+# =====================
+
+MAX_ACTIVE_APPLICATION_FOR_USER_IN_ORGANIZATION = 5
+
+
+# =====================
 
 class ApplicationService(IApplicationService):
     def __init__(
@@ -31,10 +42,44 @@ class ApplicationService(IApplicationService):
         self.org_repo = org_repo
 
     @log_calls
+    async def get_user_application_limits_in_organization(
+            self,
+            user_id: int,
+            org_id: int,
+    ) -> ApplicationLimits:
+        number_of_current_active_applications: int = (
+            await self.get_number_of_active_user_applications_in_organization(
+                user_id=user_id,
+                org_id=org_id,
+            )
+        )
+        res = ApplicationLimits(
+            application_number_current=number_of_current_active_applications,
+            application_number_max=MAX_ACTIVE_APPLICATION_FOR_USER_IN_ORGANIZATION,
+        )
+        return res
+
+    @log_calls
+    async def get_number_of_active_user_applications_in_organization(
+            self,
+            user_id: int,
+            org_id: int,
+    ) -> int:
+        res: Sequence[ApplicationMainInfo] = (
+            await self.get_user_applications_main_info_in_organization(
+                user_id=user_id,
+                org_id=org_id,
+                activity_status=ApplicationActivityStatusType.ACTIVE.value,
+            )
+        )
+        return len(res)
+
+    @log_calls
     async def get_user_applications_main_info_in_organization(
             self,
             user_id: int,
             org_id: int,
+            activity_status: str | None = None,
     ) -> Sequence[ApplicationMainInfo]:
         org: Organization | None = (
             await self.org_repo.get_organization_by_id(
@@ -47,7 +92,7 @@ class ApplicationService(IApplicationService):
         res: Sequence[ApplicationMainInfo] = (
             await self.application_repo.get_user_applications_main_info_in_organization(
                 user_id=user_id,
-                org_id=org_id,
+                activity_status=activity_status,
             )
         )
         return res
@@ -89,7 +134,7 @@ class ApplicationService(IApplicationService):
             user_id: int,
             vacancy_id: int,
             description: str,
-    ) -> ...:
+    ) -> ApplicationId:
         """
         Создать отклик на вакансию
         """
@@ -110,6 +155,23 @@ class ApplicationService(IApplicationService):
         if application:
             raise EntityAlreadyExists('Активный отклик с этим пользователем и вакансией уже существует')
 
+        org: Organization | None = (
+            await self.org_repo.get_organization_by_vacancy_id(
+                vacancy_id=vacancy_id,
+            )
+        )
+        if not org:
+            raise EntityDoesNotExist('Организация не существует')
+
+        number_of_active_user_applications_in_organization: int = (
+            await self.get_number_of_active_user_applications_in_organization(
+                user_id=user_id,
+                org_id=org.id,
+            )
+        )
+        if number_of_active_user_applications_in_organization >= MAX_ACTIVE_APPLICATION_FOR_USER_IN_ORGANIZATION:
+            raise ActiveEntityLimit('Пользователь уже имеет максимальное число откликов в этой организации')
+
         application: Application = (
             await self.application_repo.create_application(
                 user_id=user_id,
@@ -118,7 +180,8 @@ class ApplicationService(IApplicationService):
                 activity_status=ApplicationActivityStatusType.ACTIVE.value,
             )
         )
-        return application
+        res = ApplicationId(application_id=application.id)
+        return res
 
     @log_calls
     async def change_application_status(

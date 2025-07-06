@@ -1,10 +1,19 @@
 from typing import Protocol
 
+from starlette.responses import JSONResponse
+
 from core.schemas.admin import AdminPermissionSignature
 from core.schemas.permission import PermissionsShortResponse
 
 
 class IPermissionService(Protocol):
+
+    async def can_user_see_project(
+            self,
+            user_id: int,
+            project_id: int,
+    ) -> bool:
+        ...
 
     async def can_user_create_organizations(
             self,

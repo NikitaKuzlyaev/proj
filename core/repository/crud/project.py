@@ -6,7 +6,7 @@ from core.dependencies.repository import get_repository
 from core.models import Project, Vacancy
 from core.models.user import User
 from core.repository.crud.base import BaseCRUDRepository
-from core.schemas.project import ProjectsInOrganizationShortInfoResponse, ProjectManagerInfo
+from core.schemas.project import ProjectsInOrganizationShortInfoResponse, ProjectManagerInfo, ProjectVisibilityType
 from core.schemas.vacancy import VacancyActivityStatusType
 from core.utilities.loggers.log_decorator import log_calls
 
@@ -52,6 +52,22 @@ class ProjectCRUDRepository(BaseCRUDRepository):
         ]
         return res
 
+    @log_calls
+    async def is_project_open(
+            self,
+            project_id: int,
+    ) -> bool:
+        result = await self.async_session.execute(
+            select(
+                Project
+            ).where(
+                Project.id == project_id,
+            )
+        )
+        project = result.scalars().one_or_none()
+        if not project or project.visibility != ProjectVisibilityType.OPEN.value:
+            return False
+        return True
 
 
     @log_calls

@@ -1,4 +1,6 @@
-from core.models import Permission, User, Vacancy, Organization, OrganizationMember, Application
+from typing import cast
+
+from core.models import Permission, User, Vacancy, Organization, OrganizationMember, Application, Project
 from core.models.permissions import ResourceType, PermissionType
 from core.repository.crud.application import ApplicationCRUDRepository
 from core.repository.crud.organization import OrganizationCRUDRepository
@@ -8,7 +10,9 @@ from core.repository.crud.project import ProjectCRUDRepository
 from core.repository.crud.user import UserCRUDRepository
 from core.repository.crud.vacancy import VacancyCRUDRepository
 from core.schemas.admin import AdminPermissionSignature
+from core.schemas.organization import OrganizationVisibilityType
 from core.schemas.permission import PermissionsShortResponse
+from core.schemas.project import ProjectVisibilityType
 from core.services.interfaces.organization import IOrganizationService
 from core.services.interfaces.permission import IPermissionService
 from core.services.mappers.permission import PermissionMapper
@@ -58,12 +62,55 @@ class PermissionService(IPermissionService):
             return False
         return True
 
-    @trusted_method
+    @log_calls
+    async def can_user_see_project(
+            self,
+            user_id: int,
+            project_id: int,
+    ) -> bool:
+        if await self.is_user_admin(user_id=user_id):
+            return True
+        if await self.can_user_edit_project(project_id=project_id):
+            return True
+
+        project: Project | None = (
+            await self.project_repo.get_project_by_id(
+                project_id=project_id,
+            )
+        )
+        if not project or project.visibility != ProjectVisibilityType.OPEN.value:
+            return False
+
+        org: Organization | None = (
+            await self.org_repo.get_organization_by_id(
+                org_id=cast(int, project.organization_id),
+            )
+        )
+        if not org:
+            return False
+
+        if org.visibility == OrganizationVisibilityType.OPEN.value:
+            return True
+        else:
+            org_member: OrganizationMember | None = (
+                await self.member_repo.get_organization_member_by_user_and_org(
+                    user_id=user_id,
+                    org_id=org.id,
+                )
+            )
+            if org_member:
+                return True
+
+        return False
+
     @log_calls
     async def can_user_create_organizations(
             self,
             user_id: int,
     ) -> bool:
+        if await self.is_user_admin(user_id=user_id):
+            return True
+
         permission: Permission | None = (
             await self.permission_repo.search_exist_permission(
                 user_id=user_id,
@@ -72,11 +119,10 @@ class PermissionService(IPermissionService):
                 permission_type=PermissionType.CREATE_ORGANIZATION.value,
             )
         )
-        if not permission:
-            return False
-        return True
+        if permission:
+            return True
+        return False
 
-    @trusted_method
     @log_calls
     async def can_user_edit_yourself_application(
             self,
@@ -91,10 +137,12 @@ class PermissionService(IPermissionService):
         if not application:
             return False
 
+        if await self.is_user_admin(user_id=user_id):
+            return True
+
         res = bool(application.user_id == user_id)
         return res
 
-    @trusted_method
     @log_calls
     async def can_user_see_organization_detail(
             self,
@@ -106,10 +154,10 @@ class PermissionService(IPermissionService):
                 org_id=org_id,
             )
         )
-        if not res:
-            return False
-
         if self.org_service.is_org_open_to_view(org=res):
+            return True
+
+        if await self.is_user_admin(user_id=user_id):
             return True
 
         res: OrganizationMember | None = (
@@ -132,13 +180,15 @@ class PermissionService(IPermissionService):
 
         return False
 
-    @trusted_method
     @log_calls
     async def can_user_edit_organization(
             self,
             org_id: int,
             user_id: int,
     ) -> bool:
+        if await self.is_user_admin(user_id=user_id):
+            return True
+
         permission: Permission | None = (
             await self.permission_repo.search_exist_permission(
                 user_id=user_id,
@@ -151,7 +201,6 @@ class PermissionService(IPermissionService):
             return False
         return True
 
-    @trusted_method
     @log_calls
     async def check_permission(
             self,
@@ -171,7 +220,6 @@ class PermissionService(IPermissionService):
         res = permission is not None
         return res
 
-    @trusted_method
     @log_calls
     async def can_user_edit_vacancy(
             self,
@@ -190,7 +238,6 @@ class PermissionService(IPermissionService):
             return False
         return True
 
-    @trusted_method
     @log_calls
     async def can_user_edit_project(
             self,
@@ -209,7 +256,6 @@ class PermissionService(IPermissionService):
             return False
         return True
 
-    @trusted_method
     @log_calls
     async def can_user_create_projects_inside_organization(
             self,
@@ -234,19 +280,14 @@ class PermissionService(IPermissionService):
             user_id: int,
             vacancy_id: int
     ) -> PermissionsShortResponse:
-        """
-        Разрешить User с указанным user_id редактировать Vacancy с указанным vacancy_id
-        :param user_id: id объекта User
-        :param vacancy_id: id объекта Vacancy
-        :return: PermissionsShortResponse содержащий id объекта Permission
-        """
-        user: User | None = await self.user_repo.get_user_by_id(user_id=user_id)
-        if not user:
-            raise EntityDoesNotExist('User not found')
 
-        vacancy: Vacancy | None = await self.vacancy_repo.get_vacancy_by_id(vacancy_id=vacancy_id)
-        if not vacancy:
-            raise EntityDoesNotExist('Vacancy not found')
+        # user: User | None = await self.user_repo.get_user_by_id(user_id=user_id)
+        # if not user:
+        #     raise EntityDoesNotExist('User not found')
+        #
+        # vacancy: Vacancy | None = await self.vacancy_repo.get_vacancy_by_id(vacancy_id=vacancy_id)
+        # if not vacancy:
+        #     raise EntityDoesNotExist('Vacancy not found')
 
         permission: Permission = (
             await self.permission_repo.allow_user_edit_vacancy(

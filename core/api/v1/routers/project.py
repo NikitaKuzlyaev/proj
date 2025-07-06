@@ -11,10 +11,12 @@ from core.schemas.application import ApplicationShortInfo
 from core.schemas.project import ProjectCreateRequest, ProjectFullInfoResponse, ProjectPatchRequest, \
     ProjectVacanciesFullInfoResponse, CreatedProjectResponse, PatchedProjectResponse
 from core.services.interfaces.application import IApplicationService
+from core.services.interfaces.permission import IPermissionService
 from core.services.interfaces.project import IProjectService
 from core.services.interfaces.vacancy import IVacancyService
 from core.services.mappers.vacancy import VacancyMapper, get_vacancy_mapper
 from core.services.providers.application import get_application_service
+from core.services.providers.permission import get_permission_service
 from core.services.providers.project import get_project_service
 from core.services.providers.vacancy import get_vacancy_service
 from core.utilities.exceptions.database import EntityDoesNotExist
@@ -22,12 +24,20 @@ from core.utilities.exceptions.database import EntityDoesNotExist
 router = fastapi.APIRouter(prefix="/project", tags=["project"])
 
 
-@router.get("/full-info", response_model=ProjectFullInfoResponse)
+@router.get("/full-info",
+            response_model=ProjectFullInfoResponse,
+            status_code=200)
 async def get_project_full_info(
-        project_id: int = Query(),
+        project_id: int = Query(...,),
         user: User = Depends(get_user),
         project_service: IProjectService = Depends(get_project_service),
+        permission_service: IPermissionService = Depends(get_permission_service),
 ) -> JSONResponse:
+
+    # Пользователь должен иметь права на просмотр проекта
+    flag = await permission_service.can_user_see_project(user_id=user.id, project_id=project_id)
+    if not flag: raise HTTPException(status_code=403, detail="Not allowed")
+
     try:
         res: ProjectFullInfoResponse = (
             await project_service.get_project_full_info_response(

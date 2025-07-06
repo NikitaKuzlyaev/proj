@@ -78,9 +78,10 @@ class ApplicationCRUDRepository(BaseCRUDRepository):
     async def get_user_applications_main_info_in_organization(
             self,
             user_id: int,
-            org_id: int,
+            activity_status: str | None = None,
     ) -> Sequence[ApplicationMainInfo]:
-        rows = await self.async_session.execute(
+
+        stmt = (
             select(
                 Application,
                 Vacancy,
@@ -91,7 +92,15 @@ class ApplicationCRUDRepository(BaseCRUDRepository):
                 Project, Project.id == Vacancy.project_id,
             ).where(
                 Application.user_id == user_id,
+                Application.activity_status == activity_status,
             )
+        )
+
+        if activity_status is not None:
+            stmt = stmt.where(Application.activity_status == activity_status)
+
+        rows = await self.async_session.execute(
+            stmt
         )
         tuples: Sequence[
             Row[

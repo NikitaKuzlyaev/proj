@@ -29,6 +29,11 @@ class ApplicationShortInfo(BaseSchemaModel):
     vacancy_id: int
 
 
+class ApplicationLimits(BaseSchemaModel):
+    application_number_current: int
+    application_number_max: int
+
+
 class ApplicationMainInfo(BaseSchemaModel):
     application_id: int
     description: str

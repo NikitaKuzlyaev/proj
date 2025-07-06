@@ -3,7 +3,7 @@ from typing import Sequence
 from sqlalchemy import select, update, delete
 
 from core.dependencies.repository import get_repository
-from core.models import OrganizationMember, Permission, Application
+from core.models import OrganizationMember, Permission, Application, Vacancy, Project
 from core.models.organization import Organization
 from core.models.permissions import ResourceType
 from core.repository.crud.base import BaseCRUDRepository
@@ -124,6 +124,25 @@ class OrganizationCRUDRepository(BaseCRUDRepository):
                 Organization
             ).where(
                 Organization.id == org_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    @log_calls
+    async def get_organization_by_vacancy_id(
+            self,
+            vacancy_id: int,
+    ) -> Organization | None:
+        result = await self.async_session.execute(
+            select(
+                Organization
+            ).join(
+                Project, Project.organization_id == Organization.id
+            ).join(
+                Vacancy, Vacancy.project_id == Project.id
+            )
+            .where(
+                Vacancy.id == vacancy_id,
             )
         )
         return result.scalar_one_or_none()

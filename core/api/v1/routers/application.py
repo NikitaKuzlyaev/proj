@@ -1,3 +1,5 @@
+from typing import Sequence
+
 import fastapi
 from fastapi import Body
 from fastapi import Depends
@@ -7,12 +9,14 @@ from starlette.responses import JSONResponse
 from core.dependencies.authorization import get_user
 from core.models import User
 from core.schemas.application import ApplicationRequest, ApplicationShortInfo, ApplicationMainInfo, \
-    UserApplicationsInOrganizationRequest, ApplicationCancelByUserRequest, ApplicationActivityStatusType
+    UserApplicationsInOrganizationRequest, ApplicationCancelByUserRequest, ApplicationActivityStatusType, ApplicationId, \
+    ApplicationLimits
 from core.services.interfaces.application import IApplicationService
 from core.services.interfaces.permission import IPermissionService
 from core.services.providers.application import get_application_service
 from core.services.providers.permission import get_permission_service
 from core.utilities.exceptions.database import EntityDoesNotExist
+from core.utilities.exceptions.domain import ActiveEntityLimit
 from core.utilities.exceptions.permission import PermissionDenied
 
 router = fastapi.APIRouter(prefix="/application", tags=["application"])
@@ -25,27 +29,73 @@ async def get____(
     ...
 
 
-@router.post("/")
+@router.post("/",
+             response_model=ApplicationId,
+             status_code=201, )
 async def send_application_to_vacancy(
-        respond_to_vacancy: ApplicationRequest = Body(...),
+        params: ApplicationRequest = Body(...),
         user: User = Depends(get_user),
         application_service: IApplicationService = Depends(get_application_service),
 ) -> JSONResponse:
+    """
+    Пользователь делает отклик на вакансию
+    """
     try:
-        await application_service.create_application(
-            user_id=user.id,
-            vacancy_id=respond_to_vacancy.vacancy_id,
-            description=respond_to_vacancy.description,
+        result: ApplicationId = (
+            await application_service.create_application(
+                user_id=user.id,
+                **params.model_dump(),
+            )
         )
-        return JSONResponse({'body': 'ok'})
+        result = result.model_dump()
 
+        return JSONResponse({'body': result})
+
+    except PermissionDenied as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except EntityDoesNotExist as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ActiveEntityLimit as e:
+        raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/my", response_model=ApplicationMainInfo)
+@router.post("/my/limits",
+             response_model=ApplicationLimits,
+             status_code=200, )
+async def limits_of_user_active_applications_in_organization(
+        params: UserApplicationsInOrganizationRequest = Body(...),
+        user: User = Depends(get_user),
+        application_service: IApplicationService = Depends(get_application_service),
+) -> JSONResponse:
+    """
+    Узнать текущее и максимальное число активных откликов пользователя в организации
+    """
+    try:
+        result: ApplicationLimits = (
+            await application_service.get_user_application_limits_in_organization(
+                user_id=user.id,
+                org_id=params.org_id,
+            )
+        )
+        result = result.model_dump()
+
+        return JSONResponse({'body': result})
+
+    except PermissionDenied as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except EntityDoesNotExist as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/my",
+             response_model=ApplicationMainInfo,
+             status_code=200, )
 async def user_respond_applications(
-        request_model: UserApplicationsInOrganizationRequest = Body(...),
+        params: UserApplicationsInOrganizationRequest = Body(...),
         user: User = Depends(get_user),
         application_service: IApplicationService = Depends(get_application_service),
 ) -> JSONResponse:
@@ -53,14 +103,18 @@ async def user_respond_applications(
     Отклики совершенные пользователем (по умолчанию все. Потом добавить фильтрацию)
     """
     try:
-        res = await application_service.get_user_applications_main_info_in_organization(
-            user_id=user.id,
-            org_id=request_model.org_id,
+        result: Sequence[ApplicationMainInfo] = (
+            await application_service.get_user_applications_main_info_in_organization(
+                user_id=user.id,
+                org_id=params.org_id,
+            )
         )
-        res = [i.model_dump() for i in res]
+        result = [i.model_dump() for i in result]
 
-        return JSONResponse({'body': res})
+        return JSONResponse({'body': result})
 
+    except PermissionDenied as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except EntityDoesNotExist as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -115,7 +169,7 @@ async def manager_applications(
 
 
 @router.post("/manage/reject")
-async def manager_applications(
+async def manager_application_reject(
         user: User = Depends(get_user),
         application_service: IApplicationService = Depends(get_application_service),
 ) -> JSONResponse:
